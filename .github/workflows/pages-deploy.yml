@@ -52,7 +52,11 @@ jobs:
 
       - name: Test site
         run: bundle exec htmlproofer _site --disable-external --ignore-urls "/^http:\/\/127.0.0.1/,/^http:\/\/0.0.0.0/,/^http:\/\/localhost/" --ignore-empty-alt --allow-missing-href
-
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "_site"
   deploy:
     environment:
       name: github-pages
