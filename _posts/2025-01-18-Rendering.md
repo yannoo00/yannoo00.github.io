@@ -1,5 +1,6 @@
 ---
 title:  "삼각형 렌더링하기"
+layout: post
 excerpt: "Direct를 활용해 삼각형을 렌더링해보자. "
 
 categories:
