@@ -1,5 +1,5 @@
 ---
-title:  "삼각형 렌더링하기 - Renderer 클래스 만들기"
+title:  "삼각형 렌더링하기 - 렌더링 수행"
 layout: post
 excerpt: "Direct를 활용해 삼각형을 렌더링해보자. "
 
