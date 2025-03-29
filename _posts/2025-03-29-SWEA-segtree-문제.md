@@ -15,14 +15,15 @@ tags: 인덱스 트리
 ### 내 코드
 
 {% highlight C++ %} {% raw %}
-#include <iostream	
-#include <vector	
-#include <algorithm	
-#include <string	
+```C++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <string>
 
 using namespace std;
-typedef pair<int, int	 pii;
-typedef pair<int, pii	 pipii;
+typedef pair<int, int> pii;
+typedef pair<int, pii> pipii;
 
 int n;
 
@@ -149,7 +150,7 @@ int calculate(int sId, int eId) {
 	pii mm = getDiff(1,1,n,sId,eId);
 	return mm.first - mm.second;
 }
-
+```
 {% endraw %}{% endhighlight %}
 
 일반적인 seg tree 문제에 MIX/MAX/SUM을 한 번에 들고 있도록 한다.

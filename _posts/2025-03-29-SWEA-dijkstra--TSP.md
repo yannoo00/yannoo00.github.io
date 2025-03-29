@@ -15,26 +15,27 @@ tags: DP
 ### 내 코드
 
 {% highlight C++ %} {% raw %}
-#include <iostream	
-#include <vector	
-#include <string.h	
-#include <cmath	
-#include <algorithm	
-#include <queue	
+```C++
+#include <iostream>
+#include <vector>
+#include <string.h>
+#include <cmath>
+#include <algorithm>
+#include <queue>
 
 using namespace std;
-typedef pair<int, int	 pii;
+typedef pair<int, int> pii;
 
 const int INF = 987654321;
 
 int n, k, s, e, m, full;
 int dp[1 << 10][6]; //state, cur
 int stops[7];
-vector<pii	 edges[501];
+vector<pii> edges[501];
 
 int mini_edges[7][7];
 int dist[501];
-priority_queue<pii, vector<pii	, greater<pii		 pq;
+priority_queue<pii, vector<pii>, greater<pii>> pq;
 
 void init(int _n, int _k, int mRoadAs[], int mRoadBs[], int mLens[])
 {    
@@ -133,7 +134,7 @@ int findPath(int mStart, int mEnd, int M, int mStops[])
 	 int v = pq.top().second;
 	 int c = pq.top().first;
 	 pq.pop();
-	 if (c 	 dist[v]) continue;
+	 if (c > dist[v]) continue;
 
 	 if (i != 0 && v == s) continue; //출발점이나 도착점을 경유하는 경로는 고려하지 않는다..
 	 if (i != m + 1 && v == e) continue;//출발점이나 도착점을 경유하는 경로는 고려하지 않는다..
@@ -145,13 +146,13 @@ int findPath(int mStart, int mEnd, int M, int mStops[])
 	 int edge_cost = edges[v][j].first;
 	 int next_cost = edge_cost + c;
 
-	 if (dist[next] 	 next_cost)
+	 if (dist[next] > next_cost)
 	 {
 	 dist[next] = next_cost;
 	 pq.push({ next_cost, next });
 	 }
 	 }
-	 } // dist -	 s에서 출발하는 최소 거리로 갱신 끝
+	 } // dist -> s에서 출발하는 최소 거리로 갱신 끝
 
 	 for (int j = 0; j <= m + 1; ++j)
 	 {
@@ -165,7 +166,7 @@ int findPath(int mStart, int mEnd, int M, int mStops[])
 	 if (ans != INF) return ans;
 	 return -1;
 }
-
+```
 {% endraw %}{% endhighlight %}
 
 다익스트라 + TSP로 해결하는 문제.  

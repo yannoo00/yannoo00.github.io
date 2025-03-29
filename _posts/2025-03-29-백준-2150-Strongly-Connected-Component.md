@@ -15,21 +15,22 @@ tags: SCC
 ### 내 코드
 
 {% highlight C++ %} {% raw %}
-#include <iostream	
-#include <string	
-#include <vector	
-#include <algorithm	
-#include <stack	
+```C++
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <stack>
 
 using namespace std;
 
 int v1, v2, v, e, sccCnt, vertexCnt;
-vector<int	 graph[10001];
-vector<int	 SCC;
-vector<int	 discovered;
-vector<int	 ans[10001];
+vector<int> graph[10001];
+vector<int> SCC;
+vector<int> discovered;
+vector<int> ans[10001];
 bool printed[10001];
-stack<int	 st;
+stack<int> st;
 
 int Sequence(int node)
 {
@@ -71,12 +72,12 @@ int main(void)
 {
 	ios::sync_with_stdio(false); cin.tie(NULL);
 	
-	cin 		 v 		 e;
-	SCC = discovered = vector<int	(10001, -1);
+	cin >> v >> e;
+	SCC = discovered = vector<int>(10001, -1);
 	
 	for(int i=0; i<e; i++)
 	{
-		cin 		 v1 		 v2;
+		cin >> v1 >> v2;
 		graph[v1].push_back(v2);
 	}
 	
@@ -92,7 +93,7 @@ int main(void)
 	
 	for(int i=0; i<=v; i++)
 	{
-		if(printed[SCC[i]] == false && ans[SCC[i]].size()	0)
+		if(printed[SCC[i]] == false && ans[SCC[i]].size()>0)
 		{
 			sort(ans[SCC[i]].begin(), ans[SCC[i]].end());
 			for(int j=0; j<ans[SCC[i]].size(); j++)
@@ -104,7 +105,7 @@ int main(void)
 		}
 	}
 }
-
+```
 {% endraw %}{% endhighlight %}
 
 SCC를 찾고 분리하는 문제.  

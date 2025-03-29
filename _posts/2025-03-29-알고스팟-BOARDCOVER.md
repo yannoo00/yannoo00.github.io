@@ -14,10 +14,11 @@ tags: 브루트 포스
 ### 내 코드
 
 {% highlight C++ %} {% raw %}
-#include <iostream	
-#include <vector	
-#include <algorithm	
-#include <string	
+```C++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <string>
 
 using namespace std;
 
@@ -92,7 +93,7 @@ void Recursion(int last)
 
 int main(void)
 {
-	cin 		 c ;
+	cin >> c ;
 	
 	
 	for(int i=0; i<c; i++)
@@ -108,11 +109,11 @@ int main(void)
 			}
 		}
 	/////////////////////////////////////////////
-		cin 		 h 		 w;
+		cin >> h >> w;
 		
 		for(int j=0; j<h; j++)
 		{
-			cin 		 board[j];
+			cin >> board[j];
 			
 			for(int k=0; k<w; k++)
 			{
@@ -139,7 +140,7 @@ int main(void)
 		cout << sum << "\n";
 	}
 }
-
+```
 {% endraw %}{% endhighlight %}
 
 ‘알고리즘 문제 해결 전략’에 나온 문제 접근 방식을 보고 그대로 코드를 짰다.
