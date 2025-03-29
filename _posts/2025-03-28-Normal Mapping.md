@@ -4,9 +4,9 @@ layout: post
 excerpt: "texture 맵에 있는 세부 사항들이 조명 결과에도 반영되게 하기 위한 동적 조명 구현 방법"
 
 categories:
-  - C++, DirectX
+  - Graphics
 tags:
-  - [DirectX]
+  - [DirectX, graphics]
 
 toc: true
 toc_sticky: true
@@ -33,13 +33,15 @@ last_modified_at: 2025-03-28
 <br>
 
 ## Normal Map이란
-![Image](https://github.com/user-attachments/assets/4ca56985-9db3-4c9f-9d7f-aed1d2144bd7)
+
+
+![Image](https://github.com/user-attachments/assets/32a9db85-ed7d-45d8-911c-d7f89159a6ea)
 <br>
-_3D게임 프로그래밍 입문_ - Normal map에 저장된 법선(normal)들을 시각화한 그림.
+_UnityDoc_ - Normal map에 저장된 법선(normal)들을 2차원으로 시각화한 그림.
 
 법선 맵은 흔히 보던 그 푸르딩딩한 텍스처를 말한다. 일반 텍스처처럼 RGB를 생으로 담는게 아니라, 각 텍셀(텍스처 내의 단일 픽셀)에 압축된 x, y, z 좌표성분들을 RGB 채널에 담는다.  
 
-![Image](https://github.com/user-attachments/assets/81d79f33-6912-4911-8072-81da27f26424)  
+![Image](https://github.com/user-attachments/assets/bb694642-ffc6-48a7-8e5e-05bb5883e2ad)  
 즉 법선 맵이라는 이름 그대로 픽셀에 법선 벡터를 저장한 텍스처인 것이다.  
 일단 normal값을 RGB로 인코딩 할 때는 -1 ~ 1의 값을 0~255로 만들어 저장한다.  
 이 때 z축이 텍스처 평면에 수직인 방향에 대응되므로 이 법선들은 대부분 z축 방향으로 뻗어나오고, 그 결과 RGB채널에서 B값이 제일 커져서 푸르스름하게 보인다.  
