@@ -14,18 +14,18 @@ tags: DP
 
 ### 틀린 코드
 
-```C++
-#include <iostream>
-#include <algorithm>
-#include <queue>
-#include <cstdlib>
+{% highlight C++ %} {% raw %}
+#include <iostream	
+#include <algorithm	
+#include <queue	
+#include <cstdlib	
 
 using namespace std;
 
 int lowest;
 int arr[100001];
 int memo[2][100001];
-int feet[2]; //0-> left foot , 1-> right foot. initial = 0, 0
+int feet[2]; //0-	 left foot , 1-	 right foot. initial = 0, 0
 int cnt; // length of sequence
 int sum;
 int l, r;
@@ -91,7 +91,7 @@ int DFS(int idx, int cost)
 	{
 		feet[0] = arr[idx];
 		int a;
-		if(memo[0][idx+1]>0)
+		if(memo[0][idx+1]	0)
 			a = memo[0][idx+1];
 		else
 			a= DFS(idx+1, cost+cur_cost);
@@ -99,7 +99,7 @@ int DFS(int idx, int cost)
 		
 		feet[1] = arr[idx+1];
 		int b;
-		if(memo[1][idx+1]>0)
+		if(memo[1][idx+1]	0)
 			b = memo[1][idx+1];
 		else
 			b= DFS(idx+1, cost+cur_cost);
@@ -119,7 +119,7 @@ int DFS(int idx, int cost)
 	else
 	{
 		feet[value] = arr[idx];
-		if(memo[value][idx+1]>0)
+		if(memo[value][idx+1]	0)
 			best = memo[value][idx+1];
 		else	
 			best = DFS(idx+1, cost + cur_cost);
@@ -136,7 +136,7 @@ int main(void)
 	
 	while(true)
 	{
-		cin >> k;
+		cin 		 k;
 		if(!k)
 			break;
 		
@@ -154,7 +154,8 @@ int main(void)
 	cout << DFS(1, 2);
 	
 }
-```
+
+{% endraw %}{% endhighlight %}
 
 DFS와 memoization을 활용해서 코드를 적어봤지만, 모든 경우를 다루지 못해 오답 처리 되었다.  
 나는 매 선택마다 cost가 최소인 선택을 하고, 왼 발로 밟을 때와 오른 발로 밟을 때의 cost가 같다면 분기하는 식으로 코드를 짰는데 문제는 이처럼   
@@ -162,10 +163,10 @@ DFS와 memoization을 활용해서 코드를 적어봤지만, 모든 경우를 �
 
 ### 오답 코드 2
 
-```C++
-#include <iostream>
-#include <algorithm>
-#include <cstdlib>
+{% highlight C++ %} {% raw %}
+#include <iostream	
+#include <algorithm	
+#include <cstdlib	
 
 using namespace std;
 
@@ -240,7 +241,7 @@ int main(void)
 {
 	int k=0;
 	
-	cin >> k;
+	cin 		 k;
 	if(!k)
 	{
 		cout << 0;
@@ -252,7 +253,7 @@ int main(void)
 	
 	while(true)
 	{
-		cin >> k;
+		cin 		 k;
 		if(!k)
 			break;
 		
@@ -262,7 +263,8 @@ int main(void)
 	
 	cout << min( DFS(arr[0], 0, 2, 0), DFS(0, arr[0], 2, 0) );	
 }
-```
+
+{% endraw %}{% endhighlight %}
 
 1%에서 바로 틀렸다고 한다. 도대체 뭐가 틀렸는지 모르겠다.
 
@@ -275,10 +277,10 @@ left, right, idx가 같으면 cost도 같다고 가정했는데 이는 틀릴 �
 
 ### 오답 코드3
 
-```C++
-#include <iostream>
-#include <algorithm>
-#include <cstdlib>
+{% highlight C++ %} {% raw %}
+#include <iostream	
+#include <algorithm	
+#include <cstdlib	
 
 using namespace std;
 
@@ -317,7 +319,7 @@ int DFS(int left, int right, int cost, int idx )
 		return dp[left][right][idx];
 	}
 
-	if(arr[idx] == arr[idx+1]) //다음번 order도 현재와 같을 때 -> 지금 밟고 있는 발로 그대로 밟아야함 -> 밟은 판넬의 변화 X
+	if(arr[idx] == arr[idx+1]) //다음번 order도 현재와 같을 때 -	 지금 밟고 있는 발로 그대로 밟아야함 -	 밟은 판넬의 변화 X
 	{
 		dp[left][right][idx] = DFS(left, right, 1, idx+1) + cost;
 		return dp[left][right][idx];
@@ -336,7 +338,7 @@ int main(void)
 {
 	int k=0;
 	
-	cin >> k;
+	cin 		 k;
 	if(!k)
 	{
 		cout << 0;
@@ -348,7 +350,7 @@ int main(void)
 	
 	while(true)
 	{
-		cin >> k;
+		cin 		 k;
 		if(!k)
 			break;
 		
@@ -358,17 +360,18 @@ int main(void)
 	
 	cout << DFS(arr[0], 0, 2, 0);	
 }
-```
+
+{% endraw %}{% endhighlight %}
 
 현재 자기 자신을 호출하는데 든 비용을 포함해서 dp배열에 포함하다보니, 같은 경우가 아님에도 같은 경우로 취급된다.  
 자기 자신을 호출 할 때 든 비용은 배제하고 현재부터 앞으로 들 비용만을 담아야한다.  
 
 ### 정답 코드
 
-```C++
-#include <iostream>
-#include <algorithm>
-#include <cstdlib>
+{% highlight C++ %} {% raw %}
+#include <iostream	
+#include <algorithm	
+#include <cstdlib	
 
 using namespace std;
 
@@ -412,7 +415,7 @@ int main(void)
 {
 	int k=0;
 	
-	cin >> k;
+	cin 		 k;
 	if(!k)
 	{
 		cout << 0;
@@ -424,7 +427,7 @@ int main(void)
 	
 	while(true)
 	{
-		cin >> k;
+		cin 		 k;
 		if(!k)
 			break;
 		
@@ -434,7 +437,8 @@ int main(void)
 	
 	cout << DFS(arr[0], 0, 0) +2;	
 }
-```
+
+{% endraw %}{% endhighlight %}
 
 정말 너무 힘들게 풀었다. 거의 일주일 동안 백준 풀 틈이 나면 이 문제만 봤다.
 
@@ -454,54 +458,55 @@ DFS를 짜면서 머릿속으로 설계가 잘 안되어서 일단 짜면서 생
 
 ### 다른 코드
 
-```C++
-#include<bits/stdc++.h>
+{% highlight C++ %} {% raw %}
+#include<bits/stdc++.h	
 using namespace std;
 const int INF = 0x3f3f3f3f;
 
 int n, i;
 int dp[100001][5][5]{};
 
-int calDist(int a, int b){ // a -> b
-> if(a==b) return 1;
-> if(a==0) return 2;
-> a--, b--;
-> if((a+1)%4==b || (a+3)%4==b) return 3;
-> else if((a+2)%4 == b) return 4;
-> else return INF;
+int calDist(int a, int b){ // a -	 b
+	 if(a==b) return 1;
+	 if(a==0) return 2;
+	 a--, b--;
+	 if((a+1)%4==b || (a+3)%4==b) return 3;
+	 else if((a+2)%4 == b) return 4;
+	 else return INF;
 }
 
 int main() {
-> ios_base::sync_with_stdio(0);
-> cin.tie(0);
-> 
-> memset(dp, 0x3f, sizeof(dp));
-> dp[0][0][0] = 0;
+	 ios_base::sync_with_stdio(0);
+	 cin.tie(0);
+	 
+	 memset(dp, 0x3f, sizeof(dp));
+	 dp[0][0][0] = 0;
 
-> for(i=1; ; i++){
-> cin>>n;
-> if(n==0) break;
-> for(int x=0; x<5; x++) {
-> for(int y=0; y<5; y++){
-> if(dp[i-1][x][y]>=INF) continue;
-> int a = calDist(x,n);
-> int b = calDist(y,n);
-> dp[i][x][n] = min(dp[i][x][n], dp[i-1][x][y] + b); // y -> n
-> dp[i][n][y] = min(dp[i][n][y], dp[i-1][x][y] + a); // x -> n
-> }
-> }
-> }
+	 for(i=1; ; i++){
+	 cin		n;
+	 if(n==0) break;
+	 for(int x=0; x<5; x++) {
+	 for(int y=0; y<5; y++){
+	 if(dp[i-1][x][y]	=INF) continue;
+	 int a = calDist(x,n);
+	 int b = calDist(y,n);
+	 dp[i][x][n] = min(dp[i][x][n], dp[i-1][x][y] + b); // y -	 n
+	 dp[i][n][y] = min(dp[i][n][y], dp[i-1][x][y] + a); // x -	 n
+	 }
+	 }
+	 }
 
-> i--;
-> int ans = INF;
-> for(int x=0; x<5; x++){
-> for(int y=0; y<5; y++){
-> ans = min(ans, dp[i][x][y]);
-> }
-> }
-> cout<<ans;
+	 i--;
+	 int ans = INF;
+	 for(int x=0; x<5; x++){
+	 for(int y=0; y<5; y++){
+	 ans = min(ans, dp[i][x][y]);
+	 }
+	 }
+	 cout<<ans;
 }
-```
+
+{% endraw %}{% endhighlight %}
 
 재귀함수를 사용하지 않고 해결한 경우다.  
 dp[l][r][idx] 는 내 코드에서와 마찬가지로 idx까지 입력받았을 때 l, r을 밟고 있는 경우를 뜻한다.  

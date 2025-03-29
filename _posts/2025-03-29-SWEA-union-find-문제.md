@@ -14,10 +14,10 @@ tags: Union-Find
 
 ### 틀린 코드
 
-```C++
-#include <iostream>
-#include <vector>
-#include <queue>
+{% highlight C++ %} {% raw %}
+#include <iostream	
+#include <vector	
+#include <queue	
 
 using namespace std;
 
@@ -25,7 +25,7 @@ int n;
 int parent[100001];
 int height[100001];
 int score[100001];
-vector<int> edge[100001];
+vector<int	 edge[100001];
 
 int val;
 
@@ -92,7 +92,7 @@ void unionTeam(int mPlayerA, int mPlayerB)
 		parent[p2] = p1;
 		height[p1]++;
 	}
-	else if (h1 > h2)
+	else if (h1 	 h2)
 	{
 		parent[p2] = p1;
 	}
@@ -107,7 +107,8 @@ int getScore(int mID)
 	return score[mID];
 }
 
-```
+
+{% endraw %}{% endhighlight %}
 
 시간 초과 코드. 60초가 걸린다…
 
@@ -116,14 +117,14 @@ int getScore(int mID)
 
 ### 맞춘 코드
 
-```C++
-#include <iostream>
-#include <vector>
-#include <queue>
+{% highlight C++ %} {% raw %}
+#include <iostream	
+#include <vector	
+#include <queue	
 
 using namespace std;
 
-typedef pair<int, int> pii;
+typedef pair<int, int	 pii;
 
 int n;
 int parent[100001];
@@ -186,7 +187,7 @@ void unionTeam(int mPlayerA, int mPlayerB)
 
 		diff[p2] = score[p2] - score[p1]; // 자식-부모 저장
 	}
-	else if (h1 > h2)
+	else if (h1 	 h2)
 	{
 		parent[p2] = p1;
 
@@ -205,7 +206,8 @@ int getScore(int mID)
 	return Update(mID);
 }
 
-```
+
+{% endraw %}{% endhighlight %}
 
 경로 압축을 하면서 parent가 루트 노드를 가리키게 되기 때문에, diff를 정의하는게 불가능해진다.
 

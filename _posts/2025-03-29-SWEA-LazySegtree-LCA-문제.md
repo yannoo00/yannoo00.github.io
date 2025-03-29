@@ -12,19 +12,19 @@ tags: LCA
 - 유형: LCA
 - 특이사항: 삼성전자 교육 문제 / https://book.acmicpc.net/ds/segment-tree-lazy-propagation
 
-```C++
-#include<iostream>
-#include<vector>
-#include<algorithm>
-#include<string>
-#include<unordered_map>
+{% highlight C++ %} {% raw %}
+#include<iostream	
+#include<vector	
+#include<algorithm	
+#include<string	
+#include<unordered_map	
 
 using namespace std;
-typedef pair<int, int> pii;
+typedef pair<int, int	 pii;
 const int MAXN{ 1000000 };
 
-unordered_map<string, int> name_to_num;
-vector<pii> node[12002]; //{노드 번호, {출생일, 사망일}}
+unordered_map<string, int	 name_to_num;
+vector<pii	 node[12002]; //{노드 번호, {출생일, 사망일}}
 int parent[12001]; //직계 부모 저장
 int depth[12001]; //트리 상 깊이 저장 
 int n;
@@ -158,7 +158,7 @@ int distance(char mName1[], char mName2[])
 	int dist = 0;
 
 	//n1이 더 깊이 있는 노드
-	while (depth[n1] > depth[n2])
+	while (depth[n1] 	 depth[n2])
 	{
 		n1 = parent[n1];
 		++dist;
@@ -188,7 +188,8 @@ int count(int mDay)
 	return 	getTree(1, 0, MAXN, mDay, mDay); // 1부터 100만까지 범위 중 mDay~mDay의 합;
 }
 
-```
+
+{% endraw %}{% endhighlight %}
 
 Lazy Segment tree를 사용해야 해결할 수 있는 문제
 

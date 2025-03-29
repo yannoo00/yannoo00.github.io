@@ -13,9 +13,9 @@ tags: 수학
 
 ### 내 코드
 
-```C++
-#include<iostream>
-#include<string.h>
+{% highlight C++ %} {% raw %}
+#include<iostream	
+#include<string.h	
 
 using namespace std;
 
@@ -23,33 +23,34 @@ int x, y;
 
 int main()
 {    
-> int t;
-> cin >> t;
-> for(int test=0; test<t; test++)
-> {
-> cin >> x >> y;
-> long long diff = y-x;
-> long long k=1;
+	 int t;
+	 cin 		 t;
+	 for(int test=0; test<t; test++)
+	 {
+	 cin 		 x 		 y;
+	 long long diff = y-x;
+	 long long k=1;
 
-> while((k*k) < diff)
-> {
-> k++;
-> }
-> if((k*k) > diff)
-> k--;
+	 while((k*k) < diff)
+	 {
+	 k++;
+	 }
+	 if((k*k) 	 diff)
+	 k--;
 
-> if(diff == k*k)
-> {
-> cout << k*2-1 << "\n";
-> }
-> else if(diff - k*k > k)
-> {
-> cout << k*2-1 +2 << "\n";
-> }
-> else
-> cout << k*2-1 +1 << "\n";
-> }
+	 if(diff == k*k)
+	 {
+	 cout << k*2-1 << "\n";
+	 }
+	 else if(diff - k*k 	 k)
+	 {
+	 cout << k*2-1 +2 << "\n";
+	 }
+	 else
+	 cout << k*2-1 +1 << "\n";
+	 }
 }
-```
+
+{% endraw %}{% endhighlight %}
 
 1699 문제와 동일.

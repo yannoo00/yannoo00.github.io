@@ -58,13 +58,13 @@ tags: 구현
 개떡같이 말해도 찰떡같이 알아들을 수 있는지를 확인하는 문제 느낌…  
 특히 암호는 한 줄 뿐이고 같은 암호가 여러 줄에 걸쳐 출력되는데 그것에 관한 아무런 언급이 없다는게 참…….  
 
-```C++
-#include <iostream>
-#include <stdio.h> // = cstdio
-#include <cmath>
-#include <vector>
-#include <string>
-#include <algorithm>
+{% highlight C++ %} {% raw %}
+#include <iostream	
+#include <stdio.h	 // = cstdio
+#include <cmath	
+#include <vector	
+#include <string	
+#include <algorithm	
 
 using namespace std;
 
@@ -77,17 +77,17 @@ int main()
 	int test_case;
 	int T;
 	
-	cin >> T;
+	cin 		 T;
 	
 	for (test_case = 1; test_case <= T; ++test_case)
 	{
 		int n, m;
 		int ans = 0;
-		cin >> n >> m;
+		cin 		 n 		 m;
 		
 		for (int i = 0; i < n; ++i)
 		{
-			cin >> s;
+			cin 		 s;
 
 			bool isKey = false;
 			int lastIdx = 0;
@@ -102,7 +102,7 @@ int main()
 			if (!isKey) continue; //암호가 아님
 
 			//암호는 반복되어 여러번 등장하고, 각 숫자에 대응하는 암호는 2^6 자리=0, 2^0 자리=1
-			//암호를 만났을 때 -> (lastIdx-55)~(lastIdx)가 암호
+			//암호를 만났을 때 -	 (lastIdx-55)~(lastIdx)가 암호
 			//2^8 = 256
 			else
 			{
@@ -245,7 +245,8 @@ int main()
 		cout << "#" << test_case << " "<< ans <<"\n";
 	}
 }
-```
+
+{% endraw %}{% endhighlight %}
 
 일단 무작정 구현은 했는데 분명 이것보다 더 예쁘게 만들 수 있을 것 같다.
 
