@@ -6,7 +6,7 @@ tags: LCA
 ---
 
 ## 문제 정보
-- 문제 링크: [SWEA LazySegtree, LCA 문제](비공개)
+- 문제 링크: (비공개)
 - 난이도: <span style="color:#000000">pro</span>
 - 완료일: 2025년 3월 19일
 - 유형: LCA

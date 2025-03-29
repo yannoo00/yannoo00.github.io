@@ -6,7 +6,7 @@ tags: Union-Find
 ---
 
 ## 문제 정보
-- 문제 링크: [SWEA union-find 문제](비공개)
+- 문제 링크: (비공개)
 - 난이도: <span style="color:#000000">pro</span>
 - 완료일: 2025년 3월 17일
 - 유형: Union-Find
@@ -220,7 +220,7 @@ int getScore(int mID)
 height 없이 그룹 번호만으로 최적화해도 트리 깊이가 N이 되는 최악의 경우를 막을 수 있다.   
 ( 따로 줄 필요 없다. )  
 
-**최적화** [![](image.png)](<image.png>)
+**최적화**
 
 (내 스코어 - 부모 스코어) 를 계산했고,  
   
