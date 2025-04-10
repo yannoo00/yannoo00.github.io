@@ -30,8 +30,8 @@ last_modified_at: 2025-04-06
 
 
 <div style="display: flex;">
-  <img src="https://github.com/user-attachments/assets/da04d08c-38d2-4fd6-853b-9a2f1177bd8d" width="51%" />
-  <img src="https://github.com/user-attachments/assets/7dd2a785-c36a-4f01-b551-47690b123bef" width="49%" />
+  <img src="https://github.com/user-attachments/assets/da04d08c-38d2-4fd6-853b-9a2f1177bd8d" width="51%" alt=""/>
+  <img src="https://github.com/user-attachments/assets/7dd2a785-c36a-4f01-b551-47690b123bef" width="49%" alt=""/>
 </div>  
 
 _WIKIPEIDA_ _ _Deffered Shding_
