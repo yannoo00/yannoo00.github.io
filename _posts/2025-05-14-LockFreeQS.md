@@ -1,7 +1,7 @@
 ---
-title:  "Lock Based Queue, Stack"
+title:  "Lock Free Stack"
 layout: post
-excerpt: "Lock Based Queue, Stack"
+excerpt: "Lock Free Stack"
 
 categories:
   - Network
