@@ -1,0 +1,64 @@
+/* 
+ * Rouge Syntax Highlighting for Vintage Theme
+ * Based on VSCode Dark Theme
+ */
+
+/* Code blocks - apply the dark theme */
+div.highlighter-rouge,
+.highlighter-rouge pre.highlight,
+.highlight {
+  background-color: #1e1e1e !important;
+  color: #d4d4d4 !important;
+  border-radius: 4px;
+  padding: 12px;
+  margin: 1.5em 0;
+  overflow-x: auto;
+}
+
+.highlight pre,
+.highlight code {
+  background-color: transparent !important;
+  margin: 0;
+  padding: 0;
+}
+
+/* Line numbers */
+.highlight .lineno {
+  color: #858585;
+  display: inline-block;
+  padding: 0 5px;
+  margin-right: 10px;
+  user-select: none;
+}
+
+/* Default syntax colors for dark theme */
+.highlight .c, .highlight .ch, .highlight .cd, .highlight .cm, .highlight .cpf, .highlight .c1, .highlight .cs { color: #6A9955 !important; }
+.highlight .err { color: #f44747 !important; }
+.highlight .k, .highlight .kc, .highlight .kd, .highlight .kn, .highlight .kp, .highlight .kr, .highlight .kt { color: #569cd6 !important; }
+.highlight .o, .highlight .ow { color: #d4d4d4 !important; }
+.highlight .p { color: #d4d4d4 !important; }
+.highlight .n { color: #9CDCFE !important; }
+.highlight .nf, .highlight .fm { color: #DCDCAA !important; }
+.highlight .nc, .highlight .nn { color: #4EC9B0 !important; }
+.highlight .s, .highlight .sa, .highlight .sb, .highlight .sc, .highlight .dl, .highlight .sd, .highlight .s2, .highlight .sh, .highlight .sx, .highlight .s1, .highlight .sr { color: #ce9178 !important; }
+.highlight .m, .highlight .mb, .highlight .mf, .highlight .mh, .highlight .mi, .highlight .mo, .highlight .il { color: #b5cea8 !important; }
+.highlight .gd { color: #f44747 !important; }
+.highlight .gi { color: #6A9955 !important; }
+.highlight .cp { color: #569cd6 !important; }
+.highlight .nt { color: #569cd6 !important; }
+.highlight .na { color: #9CDCFE !important; }
+.highlight .nb { color: #4FC1FF !important; }
+.highlight .bp { color: #569cd6 !important; }
+.highlight .no { color: #4FC1FF !important; }
+.highlight .py { color: #4EC9B0 !important; }
+.highlight .nl { color: #9CDCFE !important; }
+.highlight .gu { color: #4EC9B0 !important; }
+.highlight .gt { color: #f44747 !important; }
+
+/* Inline code - should not have dark background */
+:not(pre) > code.highlighter-rouge {
+  background-color: transparent !important;
+  color: inherit !important;
+  padding: 0.2em 0.4em;
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+}

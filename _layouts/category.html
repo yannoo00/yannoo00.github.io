@@ -1,0 +1,25 @@
+---
+layout: vintage
+---
+
+<h1>{{ page.title }}</h1>
+
+<div class="category-posts">
+  {% if page.category %}
+  {% assign category_posts = site.categories[page.category] %}
+  {% for post in category_posts %}
+  <article class="post">
+    <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
+    <p class="post-date">{{ post.date | date: "%B %d, %Y" }}</p>
+    
+    <div class="post-excerpt">
+      {{ post.excerpt }}
+    </div>
+    
+    <p class="read-more">
+      <a href="{{ post.url | relative_url }}">Read More &raquo;</a>
+    </p>
+  </article>
+  {% endfor %}
+{% endif %}
+</div>

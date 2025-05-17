@@ -1,0 +1,117 @@
+---
+layout: compress
+---
+
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: "ko-KR" }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if page.title %}{{ page.title }} - {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
+  <meta name="description" content="{{ site.description }}">
+  
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="{{ '/assets/css/vintage.css' | relative_url }}">
+  <link rel="stylesheet" href="{{ '/assets/css/post-styles.css' | relative_url }}">
+  <link rel="stylesheet" href="{{ '/assets/css/taxonomy.css' | relative_url }}">
+  <link rel="stylesheet" href="{{ '/assets/css/syntax/rouge.css' | relative_url }}">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="{{ '/assets/img/dragon.png' | relative_url }}">
+  
+  <!-- JavaScript -->
+  <script src="{{ '/assets/js/scroll.js' | relative_url }}"></script>
+  
+</head>
+
+<body>
+  <div class="page-container">
+    <div id="header">
+      <a href="{{ site.url }}"><h1>{{ site.title }}</h1></a>
+      <h2 class="slogan">{{ site.tagline }}</h2>
+    </div>
+    
+    <div id="wrapper">
+
+      <div id="column1">
+        <h3 class="time">{{ site.time | date: '%B %d, %Y' }}</h3>
+        <ul>
+          <li><a class="wikilink" href="{{ '/' | relative_url }}">Home</a></li>
+          <li>
+            <a class="wikilink" href="{{ '/categories/' | relative_url }}">Categories</a>
+            {% if site.categories.size > 0 %}
+            <ul class="submenu">
+              {% for category_array in site.categories %}
+                {% assign category_name = category_array[0] %}
+                {% if category_name == "C++" %}
+                  {% assign category_slug = "cpp" %}
+                {% elsif category_name == "C" %}
+                  {% assign category_slug = "c-lang" %}
+                {% else %}
+                  {% assign category_slug = category_name | slugify %}
+                {% endif %}
+                <li><a href="{{ '/category/' | append: category_slug | relative_url }}">{{ category_name }} ({{ category_array[1].size }})</a></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </li>
+          <li>
+            <a class="wikilink" href="{{ '/archives/' | relative_url }}">Archives</a>
+            {% if site.posts.size > 0 %}
+            <ul class="submenu">
+              {% assign post_years = site.posts | group_by_exp: "post", "post.date | date: '%Y'" %}
+              {% for year_group in post_years %}
+                <li><a href="{{ '/archives/#' | append: year_group.name | relative_url }}">{{ year_group.name }} ({{ year_group.items.size }})</a></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </li>
+          <li><a class="wikilink" href="{{ '/about/' | relative_url }}">About</a></li>
+        </ul>
+
+        <p class="vspace sidehead">External Links</p>
+        <ul>
+          <li><a class="urllink" href="https://github.com/{{ site.github.username }}" target="_blank">GitHub</a></li>
+          <!-- Add more external links as needed -->
+        </ul>
+
+        <h3 class="sidehead">Search</h3>
+        <form class="wikisearch" action="{{ site.url }}/search" method="get">
+          <ul>
+            <li>
+              <input type="text" name="q" value="" size="12">
+              <input type="hidden" name="action" value="search">
+            </li>
+          </ul>
+        </form>
+      </div>
+
+      <div id="column2">
+        <div id="wikitext">
+          {{ content }}
+        </div>
+      </div>
+      
+    </div>
+    
+    <div id="footer">
+      <table width="100%" align="center">
+        <tr>
+          <td width="30%" align="left">
+            <a href="{{ site.url }}"><img border="0" width="90" src="{{ '/assets/img/dragon.png' | relative_url }}"></a>
+          </td>
+          <td width="40%" align="center">
+            <p>{{ site.title }}<br>
+            Powered by <a href="https://jekyllrb.com/">Jekyll</a><br>
+            &copy; {{ site.time | date: '%Y' }} {{ site.github.username }}<br>
+            Suwon, Republic of Korea</p>
+          </td>
+          <td width="30%" align="right"> 
+            <a href="https://github.com/{{ site.github.username }}"><img border="0" width="32" src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"></a>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
