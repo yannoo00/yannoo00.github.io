@@ -17,7 +17,7 @@ layout: vintage
   {% if page.tags.size > 0 %}
   <b>Tags:</b>
   {% for tag in page.tags %}
-  <span class="post-tag">{{ tag }}</span>
+  <a href="{{ '/tags/#' | append: tag | slugify | relative_url }}" class="post-tag">{{ tag }}</a>
   {% unless forloop.last %}, {% endunless %}
   {% endfor %}
   {% endif %}
