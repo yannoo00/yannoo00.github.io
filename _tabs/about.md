@@ -6,7 +6,7 @@ title: About
 <table border="0" width="100%">
   <tr>
     <td align="center" valign="top" width="30%">
-      <img height="150" src="{{ '/assets/img/dragon.png' | relative_url }}" alt="Profile Image">
+      <img height="150" src="/assets/img/dragon.png" alt="Profile Image">
     </td>
     <td align="right" valign="top" width="70%">
       <span style="font-size:144%"><strong>Yannoo</strong></span><br><br>

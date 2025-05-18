@@ -29,7 +29,7 @@ layout: compress
 <body>
   <div class="page-container">
     <div id="header" style="padding: 15px 0; border-bottom: 1px solid #eee; margin-bottom: 20px;">
-      <a href="{{ '/' | relative_url }}" style="text-decoration: none; color: inherit;"><h1><img src="{{ '/assets/img/dragon.png' | relative_url }}" alt="{{ site.title }} logo" width="40" style="vertical-align: middle; margin-right: 10px;">{{ site.title }}</h1></a>
+      <a href="{{ site.url }}" style="text-decoration: none; color: inherit;"><h1><img src="{{ '/assets/img/dragon.png' | relative_url }}" alt="{{ site.title }} logo" width="40" style="vertical-align: middle; margin-right: 10px;">{{ site.title }}</h1></a>
       <h2 class="slogan" style="font-style: italic; color: #666;">{{ site.tagline }}</h2>
     </div>
     
@@ -78,7 +78,7 @@ layout: compress
         </ul>
 
         <h3 class="sidehead">Search</h3>
-        <form class="wikisearch" action="{{ '/search' | relative_url }}" method="get">
+        <form class="wikisearch" action="{{ site.url }}/search" method="get">
           <ul>
             <li>
               <input type="text" name="q" value="" size="12">
@@ -100,7 +100,7 @@ layout: compress
       <table width="100%" align="center" style="margin-top: 20px; padding: 10px; border-top: 1px solid #eee;">
         <tr>
           <td width="30%" align="left">
-            <a href="{{ '/' | relative_url }}"><img border="0" width="60" src="{{ '/assets/img/dragon.png' | relative_url }}" alt="{{ site.title }} logo"></a>
+            <a href="{{ site.url }}"><img border="0" width="60" src="{{ '/assets/img/dragon.png' | relative_url }}" alt="{{ site.title }} logo"></a>
           </td>
           <td width="40%" align="center">
             <p>
