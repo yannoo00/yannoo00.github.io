@@ -1,7 +1,7 @@
 ---
-title:  "Stomp Allocator"
+title:  "Allocator"
 layout: post
-excerpt: "Stomp Allocator"
+excerpt: "Allocator"
 
 categories:
   - C++
@@ -89,6 +89,76 @@ void StompAllocator::Release(void* ptr)
 
 이제 메모리는 [-------[실제사용]] 이렇게 구조가 바뀌어서 overflow를 잡을 수 있게 된다.  
 반대로 underflow를 못잡게 되지만, overflow가 훨씬 잦다는 점을 생각하면 이 방식이 유리하다.  
+
+
+<br>
+
+
+
+## STL Allocator
+
+위처럼 작성하면 단일 객체의 생성은 커버할 수 있겠지만, STL을 통한 객체 관리를 하게 되면 여전히 기본 new를 사용하고 있을 것이다.  
+이 때 쓸 수 있게끔 STL에서 사용할 수 있도록 STL 요구 사항에 맞게 Allocator를 만들어줄 수 있다.  
+
+
+```cpp
+template <class Type, class Allocator = allocator<Type>>
+class vector;
+```
+vector와 같은 STL들을 살펴보면 Allocator를 커스텀으로 지정해줄 수 있음을 알 수 있다.  
+vector 뿐만이 아니라 queue나 map 등 모두 마찬가지다.  
+
+```cpp
+#pragma once
+
+#include "Types.h"
+#include "Allocator.h"
+#include <vector>
+#include <list>
+#include <queue>
+#include <stack>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+using namespace std;
+
+template<typename Type>
+using Vector = vector<Type, StlAllocator<Type>>;
+
+template<typename Type>
+using List = list<Type, StlAllocator<Type>>;
+
+template<typename Key, typename Type, typename Pred = less<Key>>
+using Map = map<Key, Type, Pred, StlAllocator<pair<const Key, Type>>>;
+
+template<typename Key, typename Pred = less<Key>>
+using Set = set<Key, Pred, StlAllocator<Key>>;
+
+template<typename Type>
+using Deque = deque<Type, StlAllocator<Type>>;
+
+template<typename Type, typename Container = Deque<Type>>
+using Queue = queue<Type, Container>;
+
+template<typename Type, typename Container = Deque<Type>>
+using Stack = stack<Type, Container>;
+
+template<typename Type, typename Container = Vector<Type>, typename Pred = less<typename Container::value_type>>
+using PriorityQueue = priority_queue<Type, Container, Pred>;
+
+using String = basic_string<char, char_traits<char>, StlAllocator<char>>;
+
+using WString = basic_string<wchar_t, char_traits<wchar_t>, StlAllocator<wchar_t>>;
+
+template<typename Key, typename Type, typename Hasher = hash<Key>, typename KeyEq = equal_to<Key>>
+using HashMap = unordered_map<Key, Type, Hasher, KeyEq, StlAllocator<pair<const Key, Type>>>;
+
+template<typename Key, typename Hasher = hash<Key>, typename KeyEq = equal_to<Key>>
+using HashSet = unordered_set<Key, Hasher, KeyEq, StlAllocator<Key>>;
+```
+이런 식으로 커스텀 Allocator를 적용한 자료구조를 미리 정의해두고 사용하면 편하다.  
+StlAllocator를 사용하는 "Vector"를 만들고, 이 Vector를 Container로 Queue, Stack 등을 만든다.  
 
 
 
