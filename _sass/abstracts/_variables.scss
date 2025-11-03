@@ -26,10 +26,10 @@ $code-icon-width: 1.75rem !default;
 
 /* fonts */
 /* $font-family-base: 'Source Sans Pro', 'Microsoft Yahei', sans-serif !default; */
-/* $font-family-heading: Lato, 'Microsoft Yahei', sans-serif !default; */
+$font-family-heading: Lato, 'Microsoft Yahei', sans-serif !default;
 
 // 1. 본문(기본) 폰트
-$font-family-base: 'Nanum Gothic Coding', monospace;
+$font-family-base: 'Noto Serif Korean', monospace;
 // 2. 제목(h1, h2 등) 폰트
 $font-family-heading: 'Nanum Gothic Coding', monospace;
 // 3. 코드 블록(```) 폰트
