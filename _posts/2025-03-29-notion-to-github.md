@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Notion to 블로그"
-categories: other
+categories: others
 tags: python
 ---
 

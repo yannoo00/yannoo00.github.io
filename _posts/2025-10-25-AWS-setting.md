@@ -4,7 +4,7 @@ layout: post
 excerpt: "AWS setting"
 
 categories:
-  - AWS
+  - Server 
 tags:
   - [AWS, database]
 
