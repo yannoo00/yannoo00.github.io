@@ -10,27 +10,8 @@
 }
 
 html {
-  @media (prefers-color-scheme: light) {
-    &:not([data-mode]),
-    &[data-mode='light'] {
-      @include light.styles;
-    }
-
-    &[data-mode='dark'] {
-      @include dark.styles;
-    }
-  }
-
-  @media (prefers-color-scheme: dark) {
-    &:not([data-mode]),
-    &[data-mode='dark'] {
-      @include dark.styles;
-    }
-
-    &[data-mode='light'] {
-      @include light.styles;
-    }
-  }
+  /* Force light theme only - Antique design doesn't need dark mode */
+  @include light.styles;
 
   @include bp.lg {
     overflow-y: scroll;
@@ -90,15 +71,13 @@ main {
 }
 
 .post-preview {
-  @extend %rounded;
-
-  border: 0;
+  border-radius: 0;
+  border: 1px solid var(--main-border-color);
   background: var(--card-bg);
-  box-shadow: var(--card-shadow);
+  box-shadow: none;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
 
   &::before {
-    @extend %rounded;
-
     content: '';
     width: 100%;
     height: 100%;
@@ -109,8 +88,9 @@ main {
   }
 
   &:hover {
+    border-color: var(--link-color);
     &::before {
-      opacity: 0.3;
+      opacity: 0.5;
     }
   }
 }
@@ -130,12 +110,13 @@ main {
 }
 
 .content {
-  font-size: 1.08rem;
+  font-size: 1.1rem;
+  line-height: 1.8;
   margin-top: 2rem;
   overflow-wrap: break-word;
 
   @include bp.xl {
-    font-size: 1.03rem;
+    font-size: 1.05rem;
   }
 
   a {

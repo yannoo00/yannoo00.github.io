@@ -3,9 +3,10 @@
 
 %heading {
   color: var(--heading-color);
-  font-weight: 400;
+  font-weight: 600; /* Stronger weight for antique style */
   font-family: v.$font-family-heading;
   scroll-margin-top: 3.5rem;
+  letter-spacing: -0.02em; /* Tighter spacing for classic look */
 }
 
 %anchor {
@@ -45,8 +46,8 @@
 }
 
 %link-hover {
-  color: #d2603a !important;
-  border-bottom: 1px solid #d2603a;
+  color: #1a3a52 !important; /* Antique dark blue on hover */
+  border-bottom: 1px solid #1a3a52;
   text-decoration: none;
 }
 
@@ -82,7 +83,7 @@
 }
 
 %rounded {
-  border-radius: v.$radius-lg;
+  border-radius: 0; /* No rounded corners for antique style */
 }
 
 %img-caption {

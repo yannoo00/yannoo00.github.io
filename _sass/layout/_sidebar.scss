@@ -58,7 +58,8 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
     width: 6.5rem;
     height: 6.5rem;
     overflow: hidden;
-    box-shadow: var(--avatar-border-color) 0 0 0 2px;
+    border: 2px solid var(--avatar-border-color); /* Square border for antique style */
+    border-radius: 0;
     transform: translateZ(0); /* fixed the zoom in Safari */
 
     @include bp.sm {
@@ -70,7 +71,7 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
       transition: transform 0.5s;
 
       &:hover {
-        transform: scale(1.2);
+        transform: scale(1.1); /* Subtle zoom for antique feel */
       }
     }
   }
@@ -138,11 +139,14 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
 
         display: flex;
         align-items: center;
-        border-radius: 0.75rem;
+        border-radius: 0; /* No rounded corners for antique style */
         font-weight: 600;
+        border-left: 3px solid transparent;
+        transition: all 0.2s ease;
 
         &:hover {
           background-color: var(--sidebar-hover-bg);
+          border-left-color: var(--link-color);
         }
 
         i {
@@ -161,6 +165,8 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
         .nav-link {
           color: var(--sidebar-active-color);
           background-color: var(--sidebar-hover-bg);
+          border-left-color: var(--link-color);
+          font-weight: 700;
 
           span {
             opacity: 1;
@@ -229,6 +235,7 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
       @extend %button;
       @extend %sidebar-links;
       @extend %sidebar-link-hover;
+      display: none; /* Hide dark mode toggle for antique theme */
     }
 
     .icon-border {
