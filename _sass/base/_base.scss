@@ -212,7 +212,7 @@ main {
   display: inline-block;
   min-width: 2rem;
   text-align: center;
-  border-radius: 0.5rem;
+  border-radius: 0; /* Antique style */
   border: 1px solid var(--btn-border-color);
   padding: 0 0.4rem;
   color: var(--text-muted-color);
@@ -224,7 +224,7 @@ main {
 }
 
 .rounded-10 {
-  border-radius: 10px !important;
+  border-radius: 0 !important; /* Antique style */
 }
 
 .img-link {
@@ -329,10 +329,12 @@ main {
   text-align: left;
 }
 
-/* Overwrite bootstrap outline button */
+/* Overwrite bootstrap outline button - Antique style */
 .btn.btn-outline-primary {
   &:not(.disabled):hover {
-    border-color: #007bff !important;
+    border-color: var(--link-color) !important;
+    background-color: var(--sidebar-hover-bg) !important;
+    color: #1a3a52 !important;
   }
 }
 

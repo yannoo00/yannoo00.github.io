@@ -10,9 +10,11 @@
 }
 
 @mixin -dot($pl: 0.25rem, $pr: 0.25rem) {
-  content: '\2022';
+  content: '|';
   padding-left: $pl;
   padding-right: $pr;
+  color: var(--text-muted-color);
+  font-weight: 300;
 }
 
 header {
@@ -156,14 +158,19 @@ header {
 
   .btn {
     @extend %-btn-post-nav;
+    border-radius: 0; /* Antique style - no rounded corners */
 
     &:not(:hover) {
       color: var(--link-color);
     }
 
     &:hover {
+      background-color: var(--sidebar-hover-bg) !important;
+      border-color: var(--link-color) !important;
+      color: #1a3a52 !important; /* Antique dark blue */
+
       &:not(.disabled)::before {
-        color: whitesmoke;
+        color: #1a3a52; /* Match antique hover color */
       }
     }
 
@@ -188,12 +195,12 @@ header {
     }
 
     &:first-child {
-      border-radius: v.$radius-lg 0 0 v.$radius-lg;
+      border-radius: 0; /* Antique style */
       left: 0.5px;
     }
 
     &:last-child {
-      border-radius: 0 v.$radius-lg v.$radius-lg 0;
+      border-radius: 0; /* Antique style */
       right: 0.5px;
     }
   }

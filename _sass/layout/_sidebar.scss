@@ -54,26 +54,7 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
   }
 
   #avatar {
-    display: block;
-    width: 6.5rem;
-    height: 6.5rem;
-    overflow: hidden;
-    border: 2px solid var(--avatar-border-color); /* Square border for antique style */
-    border-radius: 0;
-    transform: translateZ(0); /* fixed the zoom in Safari */
-
-    @include bp.sm {
-      width: 7rem;
-      height: 7rem;
-    }
-
-    img {
-      transition: transform 0.5s;
-
-      &:hover {
-        transform: scale(1.1); /* Subtle zoom for antique feel */
-      }
-    }
+    display: none; /* Hide avatar for text-only antique style */
   }
 
   .profile-wrapper {
@@ -104,7 +85,7 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
     font-size: 1.75rem;
     line-height: 1.2;
     letter-spacing: 0.25px;
-    margin-top: 1.25rem;
+    margin-top: 0; /* No top margin since avatar is hidden */
     margin-bottom: 0.5rem;
     width: fit-content;
     color: var(--site-title-color);
@@ -139,6 +120,7 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
 
         display: flex;
         align-items: center;
+        justify-content: space-between;
         border-radius: 0; /* No rounded corners for antique style */
         font-weight: 600;
         border-left: 3px solid transparent;
@@ -149,15 +131,22 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
           border-left-color: var(--link-color);
         }
 
+        /* Hide FontAwesome icons - text only style */
         i {
-          font-size: 95%;
-          opacity: 0.8;
-          margin-right: 1.5rem;
+          display: none;
         }
 
         span {
           font-size: 90%;
           letter-spacing: 0.2px;
+        }
+
+        /* Collapse indicator (+/-) for categories */
+        .collapse-indicator {
+          font-size: 0.85rem;
+          font-weight: 400;
+          color: var(--sidebar-muted-color);
+          transition: transform 0.2s ease;
         }
       }
 
@@ -176,6 +165,36 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
 
       &:not(:first-child) {
         margin-top: 0.25rem;
+      }
+    }
+
+    /* Category submenu - clean minimal style */
+    &#collapse-categories,
+    &.collapse {
+      list-style: none;
+      padding-left: 1rem !important;
+      margin-top: 0.25rem;
+
+      li.nav-item {
+        @include mx.pl-pr(0.5rem);
+
+        a.nav-link {
+          padding-left: 0.5rem;
+          font-weight: 400;
+          font-size: 0.85rem;
+          justify-content: flex-start;
+
+          span {
+            font-size: 0.85rem;
+          }
+
+          /* Post count style */
+          .post-count {
+            color: var(--sidebar-muted-color);
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+          }
+        }
       }
     }
   }

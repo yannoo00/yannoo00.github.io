@@ -29,8 +29,10 @@
     span {
       &:not(:last-child) {
         &::after {
-          content: '›';
-          padding: 0 0.3rem;
+          content: '/';
+          padding: 0 0.4rem;
+          color: var(--text-muted-color);
+          font-weight: 300;
         }
       }
     }

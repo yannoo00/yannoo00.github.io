@@ -18,26 +18,23 @@
 
   <nav class="flex-column flex-grow-1 w-100 ps-0">
     <ul class="nav">
-      <!-- home -->
+      <!-- home - text only, no icon -->
       <li class="nav-item{% if page.layout == 'home' %}{{ " active" }}{% endif %}">
         <a href="{{ '/' | relative_url }}" class="nav-link">
-          <i class="fa-fw fas fa-home"></i>
           <span>{{ site.data.locales[include.lang].tabs.home | upcase }}</span>
         </a>
       </li>
-      <!-- the real tabs -->
+      <!-- the real tabs - text only, no icons -->
       {% for tab in site.tabs %}
-        
+
         {% capture tab_name %}{{ tab.url | split: '/' | last }}{% endcapture %}
 
         {% if tab_name == "categories" %}
         <li class="nav-item">
           <a class="nav-link d-flex justify-content-between" data-bs-toggle="collapse" href="#collapse-categories" role="button" aria-expanded="false" aria-controls="collapse-categories">
-            <span>
-              <i class="fa-fw {{ tab.icon }}"></i>
-              <span>{{ site.data.locales[include.lang].tabs.categories | default: tab.title | upcase }}</span>
-            </span>
-            <i class="fas fa-chevron-down fa-xs"></i> </a>
+            <span>{{ site.data.locales[include.lang].tabs.categories | default: tab.title | upcase }}</span>
+            <span class="collapse-indicator">+</span>
+          </a>
 
           <ul id="collapse-categories" class="collapse ps-3">
             {% for category in site.categories %}
@@ -45,8 +42,8 @@
               {% assign posts_count = category | last | size %}
               <li class="nav-item">
                 <a href="{{ '/categories/' | relative_url }}{{ category_name | slugify | url_encode }}/" class="nav-link">
-                  <span class="ps-2">{{ category_name }}</span>
-                  <span class="badge rounded-pill text-muted ms-1">{{ posts_count }}</span>
+                  <span>{{ category_name }}</span>
+                  <span class="post-count">({{ posts_count }})</span>
                 </a>
               </li>
             {% endfor %}
@@ -56,7 +53,6 @@
 
         <li class="nav-item{% if tab.url == page.url %}{{ " active" }}{% endif %}">
           <a href="{{ tab.url | relative_url }}" class="nav-link">
-            <i class="fa-fw {{ tab.icon }}"></i>
             <span>{{ site.data.locales[include.lang].tabs.[tab_name] | default: tab.title | upcase }}</span>
           </a>
         </li>

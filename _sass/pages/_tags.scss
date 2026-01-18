@@ -1,13 +1,13 @@
 @use '../abstracts/breakpoints' as bp;
 
 .tag {
-  border-radius: 0.7em;
+  border-radius: 0; /* Antique style */
   padding: 6px 8px 7px;
   margin-right: 0.8rem;
   line-height: 3rem;
   letter-spacing: 0;
   border: 1px solid var(--tag-border) !important;
-  box-shadow: 0 0 3px 0 var(--tag-shadow);
+  box-shadow: none; /* Antique style - no shadows */
 
   span {
     margin-left: 0.6em;

@@ -38,7 +38,7 @@
     &.show {
       display: block;
       min-width: 20rem;
-      border-radius: 0.5rem;
+      border-radius: 0; /* Antique style */
       -webkit-backdrop-filter: blur(10px);
       backdrop-filter: blur(10px);
       background-color: rgb(255 255 255 / 50%);
@@ -61,7 +61,7 @@
 
   border-color: var(--toc-popup-border-color);
   border-width: 1px;
-  border-radius: v.$radius-lg;
+  border-radius: 0; /* Antique style */
   color: var(--text-color);
   background: var(--card-bg);
   margin-top: v.$topbar-height;

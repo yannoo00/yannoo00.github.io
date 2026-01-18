@@ -93,17 +93,17 @@
   --timeline-node-bg: #c2c6cc;
   --timeline-year-dot-color: #ffffff;
 
-  /* --- Custom code light mode colors --- */
-  --language-border-color: #ececec;
-  --highlight-bg-color: #f6f8fa;
-  --highlighter-rouge-color: #3f596f;
-  --highlight-lineno-color: #9e9e9e;
-  --inline-code-bg: rgb(25 25 28 / 5%);
-  --code-color: #3a3a3a;
-  --code-header-text-color: #a3a3a3;
-  --code-header-muted-color: #e5e5e5;
-  --code-header-icon-color: #c9c8c8;
-  --clipboard-checked-color: #43c743;
+  /* --- Dracula theme for code blocks --- */
+  --language-border-color: #44475a;
+  --highlight-bg-color: #282a36;
+  --highlighter-rouge-color: #ff79c6;
+  --highlight-lineno-color: #6272a4;
+  --inline-code-bg: rgb(40 42 54 / 15%);
+  --code-color: #f8f8f2;
+  --code-header-text-color: #6272a4;
+  --code-header-muted-color: #44475a;
+  --code-header-icon-color: #6272a4;
+  --clipboard-checked-color: #50fa7b;
 
   [class^='prompt-'] {
     --link-underline-color: rgb(219 216 216);
@@ -113,7 +113,7 @@
     display: none;
   }
 
-  /* --- Syntax highlight theme from `rougify style github` --- */
+  /* --- Dracula syntax highlighting theme --- */
 
   .highlight table td {
     padding: 5px;
@@ -125,122 +125,23 @@
 
   .highlight,
   .highlight .w {
-    color: #24292f;
-    background-color: #f6f8fa;
+    color: #f8f8f2;
+    background-color: #282a36;
   }
 
+  /* Keywords - Pink */
   .highlight .k,
   .highlight .kd,
   .highlight .kn,
   .highlight .kp,
   .highlight .kr,
   .highlight .kt,
-  .highlight .kv {
-    color: #cf222e;
-  }
-
-  .highlight .gr {
-    color: #f6f8fa;
-  }
-
-  .highlight .gd {
-    color: #82071e;
-    background-color: #ffebe9;
-  }
-
-  .highlight .nb {
-    color: #953800;
-  }
-
-  .highlight .nc {
-    color: #953800;
-  }
-
-  .highlight .no {
-    color: #953800;
-  }
-
-  .highlight .nn {
-    color: #953800;
-  }
-
-  .highlight .sr {
-    color: #116329;
-  }
-
-  .highlight .na {
-    color: #116329;
-  }
-
-  .highlight .nt {
-    color: #116329;
-  }
-
-  .highlight .gi {
-    color: #116329;
-    background-color: #dafbe1;
-  }
-
+  .highlight .kv,
   .highlight .kc {
-    color: #0550ae;
+    color: #ff79c6;
   }
 
-  .highlight .l,
-  .highlight .ld,
-  .highlight .m,
-  .highlight .mb,
-  .highlight .mf,
-  .highlight .mh,
-  .highlight .mi,
-  .highlight .il,
-  .highlight .mo,
-  .highlight .mx {
-    color: #0550ae;
-  }
-
-  .highlight .sb {
-    color: #0550ae;
-  }
-
-  .highlight .bp {
-    color: #0550ae;
-  }
-
-  .highlight .ne {
-    color: #0550ae;
-  }
-
-  .highlight .nl {
-    color: #0550ae;
-  }
-
-  .highlight .py {
-    color: #0550ae;
-  }
-
-  .highlight .nv,
-  .highlight .vc,
-  .highlight .vg,
-  .highlight .vi,
-  .highlight .vm {
-    color: #0550ae;
-  }
-
-  .highlight .o,
-  .highlight .ow {
-    color: #0550ae;
-  }
-
-  .highlight .gh {
-    color: #0550ae;
-    font-weight: bold;
-  }
-
-  .highlight .gu {
-    color: #0550ae;
-    font-weight: bold;
-  }
-
+  /* Strings - Yellow */
   .highlight .s,
   .highlight .sa,
   .highlight .sc,
@@ -251,24 +152,60 @@
   .highlight .sh,
   .highlight .sx,
   .highlight .s1,
-  .highlight .ss {
-    color: #0a3069;
+  .highlight .ss,
+  .highlight .sr {
+    color: #f1fa8c;
   }
 
-  .highlight .nd {
-    color: #8250df;
+  /* Numbers - Purple */
+  .highlight .l,
+  .highlight .ld,
+  .highlight .m,
+  .highlight .mb,
+  .highlight .mf,
+  .highlight .mh,
+  .highlight .mi,
+  .highlight .il,
+  .highlight .mo,
+  .highlight .mx {
+    color: #bd93f9;
   }
 
+  /* Functions - Green */
   .highlight .nf,
   .highlight .fm {
-    color: #8250df;
+    color: #50fa7b;
   }
 
-  .highlight .err {
-    color: #f6f8fa;
-    background-color: #82071e;
+  /* Classes, Types - Cyan */
+  .highlight .nc,
+  .highlight .nn,
+  .highlight .no {
+    color: #8be9fd;
   }
 
+  /* Built-ins - Cyan italic */
+  .highlight .nb {
+    color: #8be9fd;
+    font-style: italic;
+  }
+
+  /* Variables - White/Purple */
+  .highlight .nv,
+  .highlight .vc,
+  .highlight .vg,
+  .highlight .vi,
+  .highlight .vm {
+    color: #f8f8f2;
+  }
+
+  /* Operators - Pink */
+  .highlight .o,
+  .highlight .ow {
+    color: #ff79c6;
+  }
+
+  /* Comments - Gray */
   .highlight .c,
   .highlight .ch,
   .highlight .cd,
@@ -277,32 +214,85 @@
   .highlight .cpf,
   .highlight .c1,
   .highlight .cs {
-    color: #68717a;
+    color: #6272a4;
+    font-style: italic;
   }
 
-  .highlight .gl {
-    color: #68717a;
+  /* HTML/XML tags - Pink */
+  .highlight .nt {
+    color: #ff79c6;
   }
 
+  /* Attributes - Green */
+  .highlight .na {
+    color: #50fa7b;
+  }
+
+  /* Decorators - Green */
+  .highlight .nd {
+    color: #50fa7b;
+  }
+
+  /* Diff - Green/Red */
+  .highlight .gi {
+    color: #50fa7b;
+    background-color: rgba(80, 250, 123, 0.1);
+  }
+
+  .highlight .gd {
+    color: #ff5555;
+    background-color: rgba(255, 85, 85, 0.1);
+  }
+
+  /* Headers - Purple bold */
+  .highlight .gh,
+  .highlight .gu {
+    color: #bd93f9;
+    font-weight: bold;
+  }
+
+  /* Errors - Red */
+  .highlight .err {
+    color: #ff5555;
+  }
+
+  .highlight .gr,
   .highlight .gt {
-    color: #68717a;
+    color: #ff5555;
   }
 
-  .highlight .ni {
-    color: #24292f;
+  /* Labels, Properties - Cyan */
+  .highlight .nl,
+  .highlight .py,
+  .highlight .bp {
+    color: #8be9fd;
   }
 
+  .highlight .ne {
+    color: #ff79c6;
+  }
+
+  /* Generic */
+  .highlight .ni,
   .highlight .si {
-    color: #24292f;
+    color: #f8f8f2;
   }
 
   .highlight .ge {
-    color: #24292f;
+    color: #f8f8f2;
     font-style: italic;
   }
 
   .highlight .gs {
-    color: #24292f;
+    color: #f8f8f2;
     font-weight: bold;
+  }
+
+  .highlight .gl {
+    color: #6272a4;
+  }
+
+  .highlight .sb {
+    color: #f1fa8c;
   }
 }
