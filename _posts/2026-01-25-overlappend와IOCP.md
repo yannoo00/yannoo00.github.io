@@ -4,7 +4,7 @@ layout: post
 excerpt: "Network"
 
 categories:
-  - Network 
+  - Network
 tags:
   - [Network, socket]
 
@@ -124,5 +124,3 @@ Callback 기반 Overlapped 모델은 비동기 I/O를 지원하지만 스레드 
 IOCP는 완료 포트를 통해 이 문제를 해결한다. I/O 완료와 스레드를 분리하고, 워커 스레드 풀이 완료 큐를 공유한다. 운영체제 수준에서 스레드 스케줄링과 부하 분산을 지원한다.
 
 Windows 서버 환경에서 IOCP를 사용하는 이유는 단순히 성능이 좋아서가 아니다. 구조적으로 확장 가능한 모델이기 때문이다.
-
- 
