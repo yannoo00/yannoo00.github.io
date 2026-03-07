@@ -4,7 +4,7 @@
   <!-- 편집 버튼: JS에서 /posts/ URL일 때만 표시 -->
   <a
     id="fab-edit"
-    href="/admin/?edit={{ page.path | url_encode }}"
+    href="#"
     class="fab-btn"
     style="display: none"
     title="이 글 편집"
@@ -67,8 +67,13 @@
   (function () {
     if (!localStorage.getItem('gh_token')) return;
     document.getElementById('admin-fab').style.display = 'flex';
-    if (window.location.pathname.startsWith('/posts/')) {
-      document.getElementById('fab-edit').style.display = 'inline-flex';
+
+    var m = window.location.pathname.match(/^\/posts\/(.+?)\/?$/);
+    if (m) {
+      var slug = m[1];
+      var editBtn = document.getElementById('fab-edit');
+      editBtn.href = '/admin/?slug=' + encodeURIComponent(slug);
+      editBtn.style.display = 'inline-flex';
     }
   })();
 </script>
