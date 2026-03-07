@@ -486,7 +486,7 @@
           Object.assign({}, options, {
             headers: Object.assign(
               {
-                Authorization: "token " + getToken(),
+                Authorization: "Bearer " + getToken(),
                 Accept: "application/vnd.github.v3+json",
                 "Content-Type": "application/json",
               },
