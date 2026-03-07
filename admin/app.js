@@ -212,7 +212,7 @@ async function openEditor(post) {
 }
 
 document.getElementById("back-btn").addEventListener("click", () => {
-  showScreen("list-screen");
+  location.href = "/admin/";
 });
 
 document.getElementById("publish-btn").addEventListener("click", async function () {

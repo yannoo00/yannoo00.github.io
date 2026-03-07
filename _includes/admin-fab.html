@@ -17,7 +17,7 @@
 
   <a
     id="fab-new"
-    href="/admin/?new=1"
+    href="#"
     class="fab-btn"
     title="새 글 작성"
   >
@@ -68,23 +68,30 @@
     if (!localStorage.getItem('gh_token')) return;
     document.getElementById('admin-fab').style.display = 'flex';
 
+    function loadFabEditor(cb) {
+      if (window.FabEditor) { cb(); return; }
+      var s = document.createElement('script');
+      s.src = '/admin/fab-editor.js';
+      s.onload = cb;
+      document.head.appendChild(s);
+    }
+
+    // 편집 버튼: /posts/ URL에서만 표시
     var m = window.location.pathname.match(/^\/posts\/(.+?)\/?$/);
-    if (!m) return;
+    if (m) {
+      var slug = m[1];
+      var editBtn = document.getElementById('fab-edit');
+      editBtn.style.display = 'inline-flex';
+      editBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        loadFabEditor(function () { window.FabEditor.open(slug); });
+      });
+    }
 
-    var slug = m[1];
-    var editBtn = document.getElementById('fab-edit');
-    editBtn.style.display = 'inline-flex';
-
-    editBtn.addEventListener('click', function (e) {
+    // 새 글 버튼: 항상 표시
+    document.getElementById('fab-new').addEventListener('click', function (e) {
       e.preventDefault();
-      if (window.FabEditor) {
-        window.FabEditor.open(slug);
-      } else {
-        var s = document.createElement('script');
-        s.src = '/admin/fab-editor.js';
-        s.onload = function () { window.FabEditor.open(slug); };
-        document.head.appendChild(s);
-      }
+      loadFabEditor(function () { window.FabEditor.openNew(); });
     });
   })();
 </script>
