@@ -187,8 +187,8 @@
       '  border: 1px solid transparent; transition: opacity .15s;',
       '}',
       '.fab-ed-btn:disabled { opacity: .6; cursor: not-allowed; }',
-      '.fab-ed-save { background: #dee2e6; color: #fff; border-color: #dee2e6; }',
-      '.fab-ed-save:hover:not(:disabled) { background: #dee2e6; }',
+      '.fab-ed-save { background: #45CA4E; color: #fff; border-color: #45CA4E; }',
+      '.fab-ed-save:hover:not(:disabled) { background: #45CA4E; }',
       '.fab-ed-cancel { background: transparent; color: var(--bs-body-color,#212529); border-color: var(--bs-border-color,#dee2e6); }',
       '.fab-ed-cancel:hover { background: var(--bs-secondary-bg, #f8f9fa); }',
 
