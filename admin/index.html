@@ -1,0 +1,681 @@
+---
+---
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YannooHub Admin</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f4f4f5;
+      --surface: #ffffff;
+      --border: #e4e4e7;
+      --text: #18181b;
+      --muted: #71717a;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --danger: #ef4444;
+      --radius: 8px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── AUTH ── */
+    #auth-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .auth-card h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+    .auth-card .subtitle { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.5rem; }
+
+    /* ── INPUTS ── */
+    label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.35rem; }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="date"] {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      outline: none;
+      background: var(--surface);
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+    input:focus { border-color: var(--primary); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--bg); }
+    .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+    .btn-danger:hover { background: #fef2f2; }
+    .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header h2 { font-size: 1rem; font-weight: 600; }
+    .header-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+    /* ── LIST ── */
+    #list-screen, #editor-screen { display: none; }
+
+    .list-container {
+      max-width: 800px;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+    }
+
+    .list-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 1rem;
+    }
+
+    .post-list {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .post-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.875rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .post-item:last-child { border-bottom: none; }
+    .post-item:hover { background: var(--bg); }
+    .post-item-title { font-size: 0.9rem; font-weight: 500; }
+    .post-item-date { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+    .post-item-arrow { color: var(--muted); }
+
+    /* ── EDITOR ── */
+    .editor-container {
+      max-width: 900px;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+    }
+
+    .frontmatter-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .field-full { grid-column: 1 / -1; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+
+    .editor-wrapper {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .editor-wrapper .EasyMDEContainer .CodeMirror { border: none; border-radius: 0; }
+    .editor-wrapper .EasyMDEContainer .editor-toolbar { border-bottom: 1px solid var(--border); border-top: none; border-left: none; border-right: none; }
+    .editor-wrapper .EasyMDEContainer .editor-statusbar { border-top: 1px solid var(--border); }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: #18181b;
+      color: white;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transform: translateY(0.5rem);
+      transition: all 0.2s;
+      z-index: 9999;
+      pointer-events: none;
+      max-width: 320px;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.success { background: #166534; }
+    #toast.error   { background: #991b1b; }
+
+    /* ── SPINNER ── */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state { text-align: center; padding: 3rem; color: var(--muted); }
+
+    @media (max-width: 600px) {
+      .frontmatter-grid { grid-template-columns: 1fr; }
+      .header { padding: 0.75rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ── AUTH ── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <h1>YannooHub Admin</h1>
+    <p class="subtitle">GitHub Personal Access Token으로 로그인하세요.</p>
+
+    <div class="field" style="margin-bottom: 1rem;">
+      <label for="token-input">GitHub Token</label>
+      <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+    </div>
+
+    <button class="btn btn-primary" id="login-btn" style="width: 100%;">로그인</button>
+
+    <p style="margin-top: 1rem; font-size: 0.75rem; color: var(--muted);">
+      필요한 권한: <code>Contents: Read &amp; Write</code> (fine-grained) 또는 <code>repo</code> scope (classic)
+    </p>
+  </div>
+</div>
+
+<!-- ── LIST ── -->
+<div id="list-screen">
+  <div class="header">
+    <h2>YannooHub Admin</h2>
+    <div class="header-actions">
+      <span id="user-name" style="font-size:0.8rem; color: var(--muted);"></span>
+      <button class="btn btn-ghost btn-sm" id="logout-btn">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="list-container">
+    <div class="list-toolbar">
+      <button class="btn btn-primary" id="new-post-btn">+ 새 글 작성</button>
+    </div>
+    <div id="post-list-container">
+      <div class="post-list">
+        <div class="empty-state">글을 불러오는 중...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── EDITOR ── -->
+<div id="editor-screen">
+  <div class="header">
+    <button class="btn btn-ghost btn-sm" id="back-btn">← 목록</button>
+    <div class="header-actions">
+      <button class="btn btn-danger btn-sm" id="delete-btn" style="display:none;">삭제</button>
+      <button class="btn btn-primary" id="publish-btn">발행하기</button>
+    </div>
+  </div>
+
+  <div class="editor-container">
+    <div class="frontmatter-grid">
+      <div class="field field-full">
+        <label for="fm-title">제목</label>
+        <input type="text" id="fm-title" placeholder="포스트 제목을 입력하세요">
+      </div>
+      <div class="field">
+        <label for="fm-date">날짜</label>
+        <input type="date" id="fm-date">
+      </div>
+      <div class="field">
+        <label for="fm-categories">카테고리 (쉼표로 구분)</label>
+        <input type="text" id="fm-categories" placeholder="Network, C++">
+      </div>
+      <div class="field">
+        <label for="fm-tags">태그 (쉼표로 구분)</label>
+        <input type="text" id="fm-tags" placeholder="socket, IOCP">
+      </div>
+      <div class="field field-full">
+        <label for="fm-excerpt">요약 (excerpt)</label>
+        <input type="text" id="fm-excerpt" placeholder="글의 간단한 설명">
+      </div>
+    </div>
+
+    <div class="editor-wrapper">
+      <textarea id="md-editor"></textarea>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
+<script>
+const OWNER      = 'yannoo00';
+const REPO       = 'yannoo00.github.io';
+const BRANCH     = 'main';
+const POSTS_PATH = '_posts';
+
+let easyMDE    = null;
+let currentPost = null; // { path, sha, filename }
+
+// ── UTILS ──────────────────────────────────────────────────
+function getToken()      { return localStorage.getItem('gh_token'); }
+function setToken(t)     { localStorage.setItem('gh_token', t); }
+function clearToken()    { localStorage.removeItem('gh_token'); }
+
+let toastTimer;
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = 'show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 3500);
+}
+
+function showScreen(id) {
+  const screens = ['auth-screen', 'list-screen', 'editor-screen'];
+  screens.forEach(s => {
+    const el = document.getElementById(s);
+    if (s === id) {
+      el.style.display = s === 'auth-screen' ? 'flex' : 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
+
+function slugify(str) {
+  return str
+    .trim()
+    .replace(/[^\w\s가-힣ㄱ-ㅎㅏ-ㅣ-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// ── GITHUB API ─────────────────────────────────────────────
+async function ghFetch(path, options) {
+  options = options || {};
+  const res = await fetch('https://api.github.com' + path, Object.assign({}, options, {
+    headers: Object.assign({
+      'Authorization': 'token ' + getToken(),
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    }, options.headers || {}),
+  }));
+  if (!res.ok) {
+    const err = await res.json().catch(function() { return {}; });
+    throw new Error(err.message || 'HTTP ' + res.status);
+  }
+  return res.json();
+}
+
+function getUser()   { return ghFetch('/user'); }
+function listPosts() { return ghFetch('/repos/' + OWNER + '/' + REPO + '/contents/' + POSTS_PATH); }
+function getFile(p)  { return ghFetch('/repos/' + OWNER + '/' + REPO + '/contents/' + p); }
+
+function saveFile(path, content, message, sha) {
+  const encoded = btoa(unescape(encodeURIComponent(content)));
+  const body = { message: message, content: encoded, branch: BRANCH };
+  if (sha) body.sha = sha;
+  return ghFetch('/repos/' + OWNER + '/' + REPO + '/contents/' + path, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+}
+
+function deleteFile(path, sha, message) {
+  return ghFetch('/repos/' + OWNER + '/' + REPO + '/contents/' + path, {
+    method: 'DELETE',
+    body: JSON.stringify({ message: message, sha: sha, branch: BRANCH }),
+  });
+}
+
+// ── FRONT MATTER ───────────────────────────────────────────
+function buildFrontMatter(title, date, categories, tags, excerpt) {
+  var cats    = categories.split(',').map(function(c) { return c.trim(); }).filter(Boolean);
+  var tagList = tags.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+
+  var catsYaml = cats.map(function(c) { return '  - ' + c; }).join('\n');
+  var tagsYaml = tagList.length ? '  - [' + tagList.join(', ') + ']' : '';
+
+  return [
+    '---',
+    'title:  "' + title + '"',
+    'layout: post',
+    'excerpt: "' + excerpt + '"',
+    '',
+    'categories:',
+    catsYaml,
+    'tags:',
+    tagsYaml,
+    '',
+    'toc: true',
+    'toc_sticky: true',
+    ' ',
+    'date: ' + date,
+    'last_modified_at: ' + date,
+    '---',
+    '',
+  ].join('\n');
+}
+
+function parseFrontMatter(content) {
+  var match = content.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+  if (!match) return { fm: {}, body: content };
+
+  var yaml = match[1];
+  var body = match[2].trim();
+  var fm   = {};
+
+  var titleM = yaml.match(/^title:\s*["']?(.+?)["']?\s*$/m);
+  if (titleM) fm.title = titleM[1].replace(/^["']|["']$/g, '').trim();
+
+  var dateM = yaml.match(/^date:\s*(\S+)/m);
+  if (dateM) fm.date = dateM[1].trim();
+
+  var excerptM = yaml.match(/^excerpt:\s*["']?(.+?)["']?\s*$/m);
+  if (excerptM) fm.excerpt = excerptM[1].replace(/^["']|["']$/g, '').trim();
+
+  var catsSection = yaml.match(/^categories:\s*\n((?:[ \t]+- .+\n?)*)/m);
+  if (catsSection) {
+    var catsRaw = catsSection[1].match(/- (.+)/g);
+    if (catsRaw) fm.categories = catsRaw.map(function(s) { return s.replace('- ', '').trim(); }).join(', ');
+  }
+
+  var tagsSection = yaml.match(/^tags:\s*\n((?:[ \t]+- .+\n?)*)/m);
+  if (tagsSection) {
+    var rawTags = tagsSection[1].match(/- \[(.+)\]/);
+    if (rawTags) fm.tags = rawTags[1];
+  }
+
+  return { fm: fm, body: body };
+}
+
+// ── AUTH ───────────────────────────────────────────────────
+document.getElementById('login-btn').addEventListener('click', async function() {
+  var token = document.getElementById('token-input').value.trim();
+  if (!token) { showToast('토큰을 입력하세요.', 'error'); return; }
+
+  var btn = this;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    setToken(token);
+    var user = await getUser();
+    document.getElementById('user-name').textContent = user.login;
+    showScreen('list-screen');
+    loadPosts();
+  } catch (e) {
+    clearToken();
+    showToast('인증 실패: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '로그인';
+  }
+});
+
+document.getElementById('token-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('login-btn').click();
+});
+
+document.getElementById('logout-btn').addEventListener('click', function() {
+  clearToken();
+  showScreen('auth-screen');
+});
+
+// ── POST LIST ──────────────────────────────────────────────
+async function loadPosts() {
+  var container = document.getElementById('post-list-container');
+  container.innerHTML = '<div class="post-list"><div class="empty-state">불러오는 중...</div></div>';
+
+  try {
+    var files = await listPosts();
+    var posts = files
+      .filter(function(f) { return f.name.endsWith('.md') && f.name !== '.placeholder'; })
+      .sort(function(a, b) { return b.name.localeCompare(a.name); });
+
+    if (!posts.length) {
+      container.innerHTML = '<div class="post-list"><div class="empty-state">글이 없습니다. 새 글을 작성해보세요!</div></div>';
+      return;
+    }
+
+    var ul = document.createElement('div');
+    ul.className = 'post-list';
+
+    posts.forEach(function(post) {
+      var item = document.createElement('div');
+      item.className = 'post-item';
+
+      var m     = post.name.match(/^(\d{4}-\d{2}-\d{2})-(.+)\.md$/);
+      var date  = m ? m[1] : '';
+      var title = m ? m[2].replace(/-/g, ' ') : post.name;
+
+      item.innerHTML =
+        '<div class="post-item-info">' +
+          '<div class="post-item-title">' + escHtml(title) + '</div>' +
+          '<div class="post-item-date">'  + escHtml(date)  + '</div>' +
+        '</div>' +
+        '<span class="post-item-arrow">›</span>';
+
+      item.addEventListener('click', function() { openEditor(post); });
+      ul.appendChild(item);
+    });
+
+    container.innerHTML = '';
+    container.appendChild(ul);
+  } catch (e) {
+    container.innerHTML =
+      '<div class="post-list"><div class="empty-state" style="color:#ef4444">오류: ' + escHtml(e.message) + '</div></div>';
+  }
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('new-post-btn').addEventListener('click', function() {
+  currentPost = null;
+  openNewEditor();
+});
+
+// ── EDITOR ─────────────────────────────────────────────────
+function initEditor() {
+  if (easyMDE) return;
+  easyMDE = new EasyMDE({
+    element: document.getElementById('md-editor'),
+    spellChecker: false,
+    autosave: { enabled: false },
+    toolbar: [
+      'bold','italic','heading','|',
+      'code','quote','|',
+      'unordered-list','ordered-list','|',
+      'link','image','|',
+      'preview','side-by-side','fullscreen',
+    ],
+    minHeight: '450px',
+  });
+}
+
+function openNewEditor() {
+  initEditor();
+  document.getElementById('fm-title').value      = '';
+  document.getElementById('fm-date').value       = todayStr();
+  document.getElementById('fm-categories').value = '';
+  document.getElementById('fm-tags').value       = '';
+  document.getElementById('fm-excerpt').value    = '';
+  easyMDE.value('');
+
+  document.getElementById('delete-btn').style.display = 'none';
+  document.getElementById('publish-btn').textContent  = '발행하기';
+  currentPost = null;
+  showScreen('editor-screen');
+}
+
+async function openEditor(post) {
+  initEditor();
+  showScreen('editor-screen');
+
+  var btn = document.getElementById('publish-btn');
+  btn.disabled    = true;
+  btn.textContent = '불러오는 중...';
+
+  try {
+    var file       = await getFile(post.path);
+    var rawContent = decodeURIComponent(escape(atob(file.content.replace(/\n/g, ''))));
+    var parsed     = parseFrontMatter(rawContent);
+    var fm         = parsed.fm;
+
+    document.getElementById('fm-title').value      = fm.title      || '';
+    document.getElementById('fm-date').value       = fm.date       || todayStr();
+    document.getElementById('fm-categories').value = fm.categories || '';
+    document.getElementById('fm-tags').value       = fm.tags       || '';
+    document.getElementById('fm-excerpt').value    = fm.excerpt    || '';
+    easyMDE.value(parsed.body);
+
+    document.getElementById('delete-btn').style.display = 'inline-flex';
+    btn.textContent = '업데이트';
+    currentPost = { path: post.path, sha: file.sha, filename: post.name };
+  } catch (e) {
+    showToast('글 불러오기 실패: ' + e.message, 'error');
+    showScreen('list-screen');
+  } finally {
+    btn.disabled = false;
+    if (!btn.textContent.includes('데이트') && !btn.textContent.includes('발행')) {
+      btn.textContent = '발행하기';
+    }
+  }
+}
+
+document.getElementById('back-btn').addEventListener('click', function() {
+  showScreen('list-screen');
+});
+
+document.getElementById('publish-btn').addEventListener('click', async function() {
+  var title    = document.getElementById('fm-title').value.trim();
+  var date     = document.getElementById('fm-date').value.trim();
+  var cats     = document.getElementById('fm-categories').value.trim();
+  var tags     = document.getElementById('fm-tags').value.trim();
+  var excerpt  = document.getElementById('fm-excerpt').value.trim();
+  var body     = easyMDE.value();
+
+  if (!title) { showToast('제목을 입력하세요.', 'error'); return; }
+  if (!date)  { showToast('날짜를 입력하세요.',  'error'); return; }
+
+  var fm       = buildFrontMatter(title, date, cats, tags, excerpt);
+  var content  = fm + '\n' + body;
+  var filename = currentPost ? currentPost.filename : date + '-' + slugify(title) + '.md';
+  var path     = POSTS_PATH + '/' + filename;
+  var sha      = currentPost ? currentPost.sha : undefined;
+  var message  = currentPost ? 'Update: ' + title : 'Create: ' + title;
+
+  var btn = this;
+  btn.disabled    = true;
+  btn.innerHTML   = '<span class="spinner"></span> 발행 중...';
+
+  try {
+    var result = await saveFile(path, content, message, sha);
+    if (result.content) {
+      currentPost = { path: result.content.path, sha: result.content.sha, filename: filename };
+    }
+    showToast('발행되었습니다! GitHub Actions가 빌드를 시작합니다.', 'success');
+    btn.textContent = '업데이트';
+  } catch (e) {
+    showToast('발행 실패: ' + e.message, 'error');
+    btn.textContent = currentPost ? '업데이트' : '발행하기';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('delete-btn').addEventListener('click', async function() {
+  if (!currentPost) return;
+  if (!confirm('"' + currentPost.filename + '" 을 삭제하시겠습니까?')) return;
+
+  var btn = this;
+  btn.disabled = true;
+
+  try {
+    await deleteFile(currentPost.path, currentPost.sha, 'Delete: ' + currentPost.filename);
+    showToast('삭제되었습니다.', 'success');
+    showScreen('list-screen');
+    loadPosts();
+  } catch (e) {
+    showToast('삭제 실패: ' + e.message, 'error');
+    btn.disabled = false;
+  }
+});
+
+// ── INIT ───────────────────────────────────────────────────
+(function init() {
+  var token = getToken();
+  if (token) {
+    showScreen('list-screen');
+    getUser().then(function(user) {
+      document.getElementById('user-name').textContent = user.login;
+      loadPosts();
+    }).catch(function() {
+      clearToken();
+      showScreen('auth-screen');
+    });
+  } else {
+    showScreen('auth-screen');
+  }
+})();
+</script>
+</body>
+</html>
