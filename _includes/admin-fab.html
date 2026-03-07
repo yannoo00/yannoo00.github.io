@@ -1,0 +1,72 @@
+{% comment %} Admin floating action buttons - visible only when gh_token exists in localStorage {% endcomment %}
+
+<div id="admin-fab">
+  {% if page.path contains '_posts/' %}
+  <a
+    id="fab-edit"
+    href="/admin/?edit={{ page.path | url_encode }}"
+    class="fab-btn"
+    title="이 글 편집"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+    </svg>
+    편집
+  </a>
+  {% endif %}
+
+  <a
+    id="fab-new"
+    href="/admin/"
+    class="fab-btn"
+    title="새 글 작성"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
+    </svg>
+    새 글
+  </a>
+</div>
+
+<style>
+  #admin-fab {
+    display: none;
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 998;
+  }
+
+  .fab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    background: var(--bs-body-bg, #fff);
+    color: var(--bs-body-color, #333);
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 2rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    transition: box-shadow 0.15s, background 0.15s;
+    white-space: nowrap;
+  }
+
+  .fab-btn:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    text-decoration: none;
+    color: var(--bs-body-color, #333);
+  }
+</style>
+
+<script>
+  (function () {
+    if (localStorage.getItem('gh_token')) {
+      document.getElementById('admin-fab').style.display = 'flex';
+    }
+  })();
+</script>

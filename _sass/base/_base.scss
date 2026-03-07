@@ -75,7 +75,9 @@ main {
   border: 1px solid var(--main-border-color);
   background: var(--card-bg);
   box-shadow: none;
-  transition: border-color 0.3s ease, background-color 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    background-color 0.3s ease;
 
   &::before {
     content: '';
@@ -352,7 +354,9 @@ main {
   box-shadow: none;
   border-color: var(--input-focus-border-color) !important;
   background: center !important;
-  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+  transition:
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out;
 }
 
 .left {
