@@ -76,7 +76,7 @@
       document.head.appendChild(s);
     }
 
-    // 편집 버튼: /posts/ URL에서만 표시
+    /* 편집 버튼: /posts/ URL에서만 표시 */
     var m = window.location.pathname.match(/^\/posts\/(.+?)\/?$/);
     if (m) {
       var slug = m[1];
@@ -88,7 +88,7 @@
       });
     }
 
-    // 새 글 버튼: 항상 표시
+    /* 새 글 버튼: 항상 표시 */
     document.getElementById('fab-new').addEventListener('click', function (e) {
       e.preventDefault();
       loadFabEditor(function () { window.FabEditor.openNew(); });

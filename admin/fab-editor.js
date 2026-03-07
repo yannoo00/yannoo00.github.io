@@ -7,27 +7,37 @@
   var BRANCH = 'main';
   var POSTS_PATH = '_posts';
 
-  var _file = null;          // { path, sha } — null when creating new post
+  var _file = null; // { path, sha } — null when creating new post
   var _mde = null;
-  var _article = null;       // hidden article element (edit flow)
-  var _mainEl = null;        // main element (new flow)
+  var _article = null; // hidden article element (edit flow)
+  var _mainEl = null; // main element (new flow)
   var _mainOriginalHTML = null;
   var _container = null;
 
   // ── API ──────────────────────────────────────────────────
-  function getToken() { return localStorage.getItem('gh_token'); }
+  function getToken() {
+    return localStorage.getItem('gh_token');
+  }
 
   async function ghFetch(path, options) {
     options = options || {};
-    var res = await fetch('https://api.github.com' + path, Object.assign({}, options, {
-      headers: Object.assign({
-        Authorization: 'Bearer ' + getToken(),
-        Accept: 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json',
-      }, options.headers || {}),
-    }));
+    var res = await fetch(
+      'https://api.github.com' + path,
+      Object.assign({}, options, {
+        headers: Object.assign(
+          {
+            Authorization: 'Bearer ' + getToken(),
+            Accept: 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          options.headers || {},
+        ),
+      }),
+    );
     if (!res.ok) {
-      var err = await res.json().catch(function () { return {}; });
+      var err = await res.json().catch(function () {
+        return {};
+      });
       throw new Error(err.message || 'HTTP ' + res.status);
     }
     return res.json();
@@ -35,7 +45,9 @@
 
   async function findPostBySlug(slug) {
     var decodedSlug = decodeURIComponent(slug);
-    var files = await ghFetch('/repos/' + OWNER + '/' + REPO + '/contents/' + POSTS_PATH);
+    var files = await ghFetch(
+      '/repos/' + OWNER + '/' + REPO + '/contents/' + POSTS_PATH,
+    );
     var match = files.find(function (f) {
       var m = f.name.match(/^\d{4}-\d{2}-\d{2}-(.+)\.md$/);
       return m && m[1] === decodedSlug;
@@ -50,7 +62,8 @@
   }
 
   function slugify(str) {
-    return str.trim()
+    return str
+      .trim()
       .replace(/[^\w\s가-힣ㄱ-ㅎㅏ-ㅣ-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-');
@@ -76,7 +89,12 @@
     var catsSection = yaml.match(/^categories:\s*\n((?:[ \t]+- .+\n?)*)/m);
     if (catsSection) {
       var catsRaw = catsSection[1].match(/- (.+)/g);
-      if (catsRaw) fm.categories = catsRaw.map(function (s) { return s.replace('- ', '').trim(); }).join(', ');
+      if (catsRaw)
+        fm.categories = catsRaw
+          .map(function (s) {
+            return s.replace('- ', '').trim();
+          })
+          .join(', ');
     }
 
     var tagsSection = yaml.match(/^tags:\s*\n((?:[ \t]+- .+\n?)*)/m);
@@ -89,9 +107,23 @@
   }
 
   function buildFrontMatter(title, date, categories, tags, excerpt) {
-    var cats = categories.split(',').map(function (c) { return c.trim(); }).filter(Boolean);
-    var tagList = tags.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
-    var catsYaml = cats.map(function (c) { return '  - ' + c; }).join('\n');
+    var cats = categories
+      .split(',')
+      .map(function (c) {
+        return c.trim();
+      })
+      .filter(Boolean);
+    var tagList = tags
+      .split(',')
+      .map(function (t) {
+        return t.trim();
+      })
+      .filter(Boolean);
+    var catsYaml = cats
+      .map(function (c) {
+        return '  - ' + c;
+      })
+      .join('\n');
     var tagsYaml = tagList.length ? '  - [' + tagList.join(', ') + ']' : '';
 
     return [
@@ -155,8 +187,8 @@
       '  border: 1px solid transparent; transition: opacity .15s;',
       '}',
       '.fab-ed-btn:disabled { opacity: .6; cursor: not-allowed; }',
-      '.fab-ed-save { background: #0d6efd; color: #fff; border-color: #0d6efd; }',
-      '.fab-ed-save:hover:not(:disabled) { background: #0b5ed7; }',
+      '.fab-ed-save { background: #dee2e6; color: #fff; border-color: #dee2e6; }',
+      '.fab-ed-save:hover:not(:disabled) { background: #dee2e6; }',
       '.fab-ed-cancel { background: transparent; color: var(--bs-body-color,#212529); border-color: var(--bs-border-color,#dee2e6); }',
       '.fab-ed-cancel:hover { background: var(--bs-secondary-bg, #f8f9fa); }',
 
@@ -193,7 +225,10 @@
   // ── LOAD SCRIPT HELPER ───────────────────────────────────
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
-      if (window.EasyMDE) { resolve(); return; }
+      if (window.EasyMDE) {
+        resolve();
+        return;
+      }
       var s = document.createElement('script');
       s.src = src;
       s.onload = resolve;
@@ -207,17 +242,29 @@
       var link = document.createElement('link');
       link.id = 'easymde-css';
       link.rel = 'stylesheet';
-      link.href = 'https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css';
+      link.href =
+        'https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css';
       document.head.appendChild(link);
     }
-    await loadScript('https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js');
+    await loadScript(
+      'https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js',
+    );
   }
 
   // ── CANCEL / RESTORE ─────────────────────────────────────
   function cancel() {
-    if (_container) { _container.remove(); _container = null; }
-    if (_mde) { _mde.toTextArea(); _mde = null; }
-    if (_article) { _article.style.display = ''; _article = null; }
+    if (_container) {
+      _container.remove();
+      _container = null;
+    }
+    if (_mde) {
+      _mde.toTextArea();
+      _mde = null;
+    }
+    if (_article) {
+      _article.style.display = '';
+      _article = null;
+    }
     if (_mainEl && _mainOriginalHTML !== null) {
       _mainEl.innerHTML = _mainOriginalHTML;
       _mainOriginalHTML = null;
@@ -228,20 +275,24 @@
 
   // ── BUILD EDITOR UI ───────────────────────────────────────
   function buildEditorHTML(saveLabel) {
-    return '<div class="fab-editor-bar">' +
+    return (
+      '<div class="fab-editor-bar">' +
       '<div class="fab-editor-fields">' +
-        '<input id="fab-fm-title" type="text" placeholder="제목" />' +
-        '<input id="fab-fm-date" type="date" />' +
-        '<input id="fab-fm-categories" type="text" placeholder="카테고리 (쉼표 구분)" />' +
-        '<input id="fab-fm-tags" type="text" placeholder="태그 (쉼표 구분)" />' +
-        '<input id="fab-fm-excerpt" type="text" placeholder="요약" />' +
+      '<input id="fab-fm-title" type="text" placeholder="제목" />' +
+      '<input id="fab-fm-date" type="date" />' +
+      '<input id="fab-fm-categories" type="text" placeholder="카테고리 (쉼표 구분)" />' +
+      '<input id="fab-fm-tags" type="text" placeholder="태그 (쉼표 구분)" />' +
+      '<input id="fab-fm-excerpt" type="text" placeholder="요약" />' +
       '</div>' +
       '<div class="fab-editor-actions">' +
-        '<button id="fab-save-btn" class="fab-ed-btn fab-ed-save">' + saveLabel + '</button>' +
-        '<button id="fab-cancel-btn" class="fab-ed-btn fab-ed-cancel">취소</button>' +
+      '<button id="fab-save-btn" class="fab-ed-btn fab-ed-save">' +
+      saveLabel +
+      '</button>' +
+      '<button id="fab-cancel-btn" class="fab-ed-btn fab-ed-cancel">취소</button>' +
       '</div>' +
-    '</div>' +
-    '<textarea id="fab-md-textarea"></textarea>';
+      '</div>' +
+      '<textarea id="fab-md-textarea"></textarea>'
+    );
   }
 
   function initMDE(body) {
@@ -249,7 +300,24 @@
       element: document.getElementById('fab-md-textarea'),
       spellChecker: false,
       autosave: { enabled: false },
-      toolbar: ['bold','italic','heading','|','code','quote','|','unordered-list','ordered-list','|','link','image','|','preview','side-by-side','fullscreen'],
+      toolbar: [
+        'bold',
+        'italic',
+        'heading',
+        '|',
+        'code',
+        'quote',
+        '|',
+        'unordered-list',
+        'ordered-list',
+        '|',
+        'link',
+        'image',
+        '|',
+        'preview',
+        'side-by-side',
+        'fullscreen',
+      ],
       minHeight: '500px',
     });
     _mde.value(body || '');
@@ -259,24 +327,37 @@
 
   // ── SAVE ─────────────────────────────────────────────────
   async function save() {
-    var title   = document.getElementById('fab-fm-title').value.trim();
-    var date    = document.getElementById('fab-fm-date').value.trim();
-    var cats    = document.getElementById('fab-fm-categories').value.trim();
-    var tags    = document.getElementById('fab-fm-tags').value.trim();
+    var title = document.getElementById('fab-fm-title').value.trim();
+    var date = document.getElementById('fab-fm-date').value.trim();
+    var cats = document.getElementById('fab-fm-categories').value.trim();
+    var tags = document.getElementById('fab-fm-tags').value.trim();
     var excerpt = document.getElementById('fab-fm-excerpt').value.trim();
-    var body    = _mde.value();
+    var body = _mde.value();
 
-    if (!title) { showNotice('제목을 입력하세요.', 'error'); return; }
-    if (!date)  { showNotice('날짜를 입력하세요.', 'error'); return; }
+    if (!title) {
+      showNotice('제목을 입력하세요.', 'error');
+      return;
+    }
+    if (!date) {
+      showNotice('날짜를 입력하세요.', 'error');
+      return;
+    }
 
-    var content = buildFrontMatter(title, date, cats, tags, excerpt) + '\n' + body;
-    var encoded = btoa(String.fromCharCode.apply(null, new TextEncoder().encode(content)));
+    var content =
+      buildFrontMatter(title, date, cats, tags, excerpt) + '\n' + body;
+    var encoded = btoa(
+      String.fromCharCode.apply(null, new TextEncoder().encode(content)),
+    );
 
     var isNew = !_file;
     var path = isNew
       ? POSTS_PATH + '/' + date + '-' + slugify(title) + '.md'
       : _file.path;
-    var payload = { message: (isNew ? 'Create: ' : 'Update: ') + title, content: encoded, branch: BRANCH };
+    var payload = {
+      message: (isNew ? 'Create: ' : 'Update: ') + title,
+      content: encoded,
+      branch: BRANCH,
+    };
     if (!isNew) payload.sha = _file.sha;
 
     var saveBtn = document.getElementById('fab-save-btn');
@@ -284,18 +365,27 @@
     saveBtn.textContent = isNew ? '발행 중...' : '저장 중...';
 
     try {
-      var result = await ghFetch('/repos/' + OWNER + '/' + REPO + '/contents/' + path, {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      });
+      var result = await ghFetch(
+        '/repos/' + OWNER + '/' + REPO + '/contents/' + path,
+        {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        },
+      );
       if (isNew) {
         _file = { path: result.content.path, sha: result.content.sha };
         saveBtn.textContent = '저장';
-        showNotice('발행되었습니다! GitHub Actions가 빌드를 시작합니다.', 'success');
+        showNotice(
+          '발행되었습니다! GitHub Actions가 빌드를 시작합니다.',
+          'success',
+        );
       } else {
         _file.sha = result.content.sha;
         saveBtn.textContent = '저장';
-        showNotice('저장되었습니다! GitHub Actions가 빌드를 시작합니다.', 'success');
+        showNotice(
+          '저장되었습니다! GitHub Actions가 빌드를 시작합니다.',
+          'success',
+        );
       }
     } catch (e) {
       showNotice((isNew ? '발행' : '저장') + ' 실패: ' + e.message, 'error');
@@ -310,14 +400,23 @@
     injectCSS();
 
     _article = document.querySelector('main article');
-    if (!_article) { showNotice('게시글 영역을 찾을 수 없습니다.', 'error'); return; }
+    if (!_article) {
+      showNotice('게시글 영역을 찾을 수 없습니다.', 'error');
+      return;
+    }
     _article.style.opacity = '.3';
     _article.style.pointerEvents = 'none';
 
     try {
       var fileInfo = await findPostBySlug(slug);
-      var file = await ghFetch('/repos/' + OWNER + '/' + REPO + '/contents/' + fileInfo.path);
-      var raw = new TextDecoder().decode(Uint8Array.from(atob(file.content.replace(/\n/g, '')), function (c) { return c.charCodeAt(0); }));
+      var file = await ghFetch(
+        '/repos/' + OWNER + '/' + REPO + '/contents/' + fileInfo.path,
+      );
+      var raw = new TextDecoder().decode(
+        Uint8Array.from(atob(file.content.replace(/\n/g, '')), function (c) {
+          return c.charCodeAt(0);
+        }),
+      );
       var parsed = parseFrontMatter(raw);
       _file = { path: fileInfo.path, sha: file.sha };
 
@@ -332,13 +431,13 @@
       _container.innerHTML = buildEditorHTML('저장');
       _article.parentNode.insertBefore(_container, _article);
 
-      document.getElementById('fab-fm-title').value      = parsed.fm.title      || '';
-      document.getElementById('fab-fm-date').value       = parsed.fm.date       || '';
-      document.getElementById('fab-fm-categories').value = parsed.fm.categories || '';
-      document.getElementById('fab-fm-tags').value       = parsed.fm.tags       || '';
-      document.getElementById('fab-fm-excerpt').value    = parsed.fm.excerpt    || '';
+      document.getElementById('fab-fm-title').value = parsed.fm.title || '';
+      document.getElementById('fab-fm-date').value = parsed.fm.date || '';
+      document.getElementById('fab-fm-categories').value =
+        parsed.fm.categories || '';
+      document.getElementById('fab-fm-tags').value = parsed.fm.tags || '';
+      document.getElementById('fab-fm-excerpt').value = parsed.fm.excerpt || '';
       initMDE(parsed.body);
-
     } catch (e) {
       _article.style.opacity = '';
       _article.style.pointerEvents = '';
@@ -351,7 +450,10 @@
     injectCSS();
 
     _mainEl = document.querySelector('main[aria-label="Main Content"]');
-    if (!_mainEl) { showNotice('콘텐츠 영역을 찾을 수 없습니다.', 'error'); return; }
+    if (!_mainEl) {
+      showNotice('콘텐츠 영역을 찾을 수 없습니다.', 'error');
+      return;
+    }
 
     _mainOriginalHTML = _mainEl.innerHTML;
     _mainEl.innerHTML = '';
@@ -367,7 +469,6 @@
 
       document.getElementById('fab-fm-date').value = todayStr();
       initMDE('');
-
     } catch (e) {
       _mainEl.innerHTML = _mainOriginalHTML;
       _mainOriginalHTML = null;
