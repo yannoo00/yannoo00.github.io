@@ -59,10 +59,14 @@ document.getElementById("login-btn").addEventListener("click", async function ()
     const user = await getUser();
     document.getElementById("user-name").textContent = user.login;
     showScreen("list-screen");
-    const pending = sessionStorage.getItem("pending_edit");
-    if (pending) {
+    const pendingEdit = sessionStorage.getItem("pending_edit");
+    const pendingNew = sessionStorage.getItem("pending_new");
+    if (pendingEdit) {
       sessionStorage.removeItem("pending_edit");
-      openEditor({ path: pending, name: pending.split("/").pop() });
+      openEditor({ path: pendingEdit, name: pendingEdit.split("/").pop() });
+    } else if (pendingNew) {
+      sessionStorage.removeItem("pending_new");
+      openNewEditor();
     } else {
       loadPosts();
     }
@@ -275,7 +279,9 @@ document.getElementById("delete-btn").addEventListener("click", async function (
 // ── INIT ───────────────────────────────────────────────────
 (function init() {
   const token = getToken();
-  const editPath = new URLSearchParams(location.search).get("edit"); // e.g. "_posts/2026-03-07-title.md"
+  const params = new URLSearchParams(location.search);
+  const editPath = params.get("edit"); // e.g. "_posts/2026-03-07-title.md"
+  const isNew = params.has("new");
 
   if (token) {
     showScreen("list-screen");
@@ -284,6 +290,8 @@ document.getElementById("delete-btn").addEventListener("click", async function (
         document.getElementById("user-name").textContent = user.login;
         if (editPath) {
           openEditor({ path: editPath, name: editPath.split("/").pop() });
+        } else if (isNew) {
+          openNewEditor();
         } else {
           loadPosts();
         }
@@ -293,8 +301,9 @@ document.getElementById("delete-btn").addEventListener("click", async function (
         showScreen("auth-screen");
       });
   } else {
-    // 인증 후 리다이렉트할 경로를 기억해둠
+    // 인증 후 처리할 액션을 기억해둠
     if (editPath) sessionStorage.setItem("pending_edit", editPath);
+    if (isNew) sessionStorage.setItem("pending_new", "1");
     showScreen("auth-screen");
   }
 })();

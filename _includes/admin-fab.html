@@ -1,11 +1,12 @@
 {% comment %} Admin floating action buttons - visible only when gh_token exists in localStorage {% endcomment %}
 
 <div id="admin-fab">
-  {% if page.path contains '_posts/' %}
+  <!-- 편집 버튼: JS에서 /posts/ URL일 때만 표시 -->
   <a
     id="fab-edit"
     href="/admin/?edit={{ page.path | url_encode }}"
     class="fab-btn"
+    style="display: none"
     title="이 글 편집"
   >
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -13,11 +14,10 @@
     </svg>
     편집
   </a>
-  {% endif %}
 
   <a
     id="fab-new"
-    href="/admin/"
+    href="/admin/?new=1"
     class="fab-btn"
     title="새 글 작성"
   >
@@ -65,8 +65,10 @@
 
 <script>
   (function () {
-    if (localStorage.getItem('gh_token')) {
-      document.getElementById('admin-fab').style.display = 'flex';
+    if (!localStorage.getItem('gh_token')) return;
+    document.getElementById('admin-fab').style.display = 'flex';
+    if (window.location.pathname.startsWith('/posts/')) {
+      document.getElementById('fab-edit').style.display = 'inline-flex';
     }
   })();
 </script>
