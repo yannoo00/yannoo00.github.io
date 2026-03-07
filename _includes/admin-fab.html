@@ -69,11 +69,22 @@
     document.getElementById('admin-fab').style.display = 'flex';
 
     var m = window.location.pathname.match(/^\/posts\/(.+?)\/?$/);
-    if (m) {
-      var slug = m[1];
-      var editBtn = document.getElementById('fab-edit');
-      editBtn.href = '/admin/?slug=' + encodeURIComponent(slug);
-      editBtn.style.display = 'inline-flex';
-    }
+    if (!m) return;
+
+    var slug = m[1];
+    var editBtn = document.getElementById('fab-edit');
+    editBtn.style.display = 'inline-flex';
+
+    editBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (window.FabEditor) {
+        window.FabEditor.open(slug);
+      } else {
+        var s = document.createElement('script');
+        s.src = '/admin/fab-editor.js';
+        s.onload = function () { window.FabEditor.open(slug); };
+        document.head.appendChild(s);
+      }
+    });
   })();
 </script>

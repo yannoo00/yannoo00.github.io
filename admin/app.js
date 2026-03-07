@@ -60,14 +60,10 @@ document.getElementById("login-btn").addEventListener("click", async function ()
     document.getElementById("user-name").textContent = user.login;
     showScreen("list-screen");
     const pendingEdit = sessionStorage.getItem("pending_edit");
-    const pendingSlug = sessionStorage.getItem("pending_slug");
     const pendingNew = sessionStorage.getItem("pending_new");
     if (pendingEdit) {
       sessionStorage.removeItem("pending_edit");
       openEditor({ path: pendingEdit, name: pendingEdit.split("/").pop() });
-    } else if (pendingSlug) {
-      sessionStorage.removeItem("pending_slug");
-      openEditorBySlug(pendingSlug);
     } else if (pendingNew) {
       sessionStorage.removeItem("pending_new");
       openNewEditor();
@@ -280,33 +276,11 @@ document.getElementById("delete-btn").addEventListener("click", async function (
   }
 });
 
-// ── SLUG → POST 검색 ────────────────────────────────────────
-async function openEditorBySlug(slug) {
-  try {
-    const files = await listPosts();
-    const match = files.find((f) => {
-      // 파일명: YYYY-MM-DD-slug.md → slug 부분만 추출해서 비교
-      const m = f.name.match(/^\d{4}-\d{2}-\d{2}-(.+)\.md$/);
-      return m && m[1] === slug;
-    });
-    if (match) {
-      openEditor(match);
-    } else {
-      showToast("게시글을 찾을 수 없습니다: " + slug, "error");
-      loadPosts();
-    }
-  } catch (e) {
-    showToast("게시글 검색 실패: " + e.message, "error");
-    loadPosts();
-  }
-}
-
 // ── INIT ───────────────────────────────────────────────────
 (function init() {
   const token = getToken();
   const params = new URLSearchParams(location.search);
   const editPath = params.get("edit"); // e.g. "_posts/2026-03-07-title.md"
-  const editSlug = params.get("slug"); // e.g. "2026-03-07-title" (from FAB button)
   const isNew = params.has("new");
 
   if (token) {
@@ -316,8 +290,6 @@ async function openEditorBySlug(slug) {
         document.getElementById("user-name").textContent = user.login;
         if (editPath) {
           openEditor({ path: editPath, name: editPath.split("/").pop() });
-        } else if (editSlug) {
-          openEditorBySlug(editSlug);
         } else if (isNew) {
           openNewEditor();
         } else {
@@ -331,7 +303,6 @@ async function openEditorBySlug(slug) {
   } else {
     // 인증 후 처리할 액션을 기억해둠
     if (editPath) sessionStorage.setItem("pending_edit", editPath);
-    if (editSlug) sessionStorage.setItem("pending_slug", editSlug);
     if (isNew) sessionStorage.setItem("pending_new", "1");
     showScreen("auth-screen");
   }
