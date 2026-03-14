@@ -17,4 +17,4 @@ last_modified_at: 2026-03-14
 
 #### Delegator  
 
-delegator의 작동원리  
+delegator는 일종의 메서드 전달자다.  
