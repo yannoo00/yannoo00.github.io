@@ -4,9 +4,9 @@ layout: post
 excerpt: ""
 
 categories:
-  - CSharp
+  - C#
 tags:
-
+  - [C#]
 
 toc: true
 toc_sticky: true
@@ -44,4 +44,4 @@ d("Hello world"); //call
 
 
 
-참고) [Delegates (C# Programming Guide)](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/delegates/)  
+참고) [Delegates (C# Programming Guide)](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/delegates/)
