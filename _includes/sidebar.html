@@ -37,7 +37,8 @@
           </a>
 
           <ul id="collapse-categories" class="collapse ps-3">
-            {% for category in site.categories %}
+            {% assign sorted_categories = site.categories | sort %}
+            {% for category in sorted_categories %}
               {% assign category_name = category | first %}
               {% assign posts_count = category | last | size %}
               <li class="nav-item">
