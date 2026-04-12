@@ -4,7 +4,7 @@ layout: post
 excerpt: "Lock Free Stack 2"
 
 categories:
-  - Network
+  - Cpp
 tags:
   - [Network]
 
