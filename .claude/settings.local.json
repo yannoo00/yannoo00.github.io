@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -h \"^categories:\" /Users/yannoo/Desktop/Yannoo/yannoo00.github.io/_posts/*.md)",
+      "Bash(xargs cat)",
+      "Bash(grep -l \"categories:\" /Users/yannoo/Desktop/Yannoo/yannoo00.github.io/_posts/*.md)",
+      "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -20 {}')",
+      "Bash(git -C /Users/yannoo/Desktop/Yannoo/yannoo00.github.io/ ls-files _site/)",
+      "Bash(git -C /Users/yannoo/Desktop/Yannoo/yannoo00.github.io log --oneline --all)",
+      "Bash(git -C /Users/yannoo/Desktop/Yannoo/yannoo00.github.io show 3283110 --stat)"
+    ]
+  }
+}

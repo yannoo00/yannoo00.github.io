@@ -121,17 +121,23 @@ function parseFrontMatter(content) {
   const excerptM = yaml.match(/^excerpt:\s*["']?(.+?)["']?\s*$/m);
   if (excerptM) fm.excerpt = excerptM[1].replace(/^["']|["']$/g, '').trim();
 
-  const catsSection = yaml.match(/^categories:\s*\n((?:[ \t]+- .+\n?)*)/m);
-  if (catsSection) {
-    const catsRaw = catsSection[1].match(/- (.+)/g);
+  const catsInline = yaml.match(/^categories:\s*(.+)$/m);
+  const catsBlock = yaml.match(/^categories:\s*\n((?:[ \t]+- .+\n?)*)/m);
+  if (catsBlock) {
+    const catsRaw = catsBlock[1].match(/- (.+)/g);
     if (catsRaw)
       fm.categories = catsRaw.map((s) => s.replace('- ', '').trim()).join(', ');
+  } else if (catsInline && catsInline[1].trim()) {
+    fm.categories = catsInline[1].trim();
   }
 
-  const tagsSection = yaml.match(/^tags:\s*\n((?:[ \t]+- .+\n?)*)/m);
-  if (tagsSection) {
-    const rawTags = tagsSection[1].match(/- \[(.+)\]/);
+  const tagsInline = yaml.match(/^tags:\s*(.+)$/m);
+  const tagsBlock = yaml.match(/^tags:\s*\n((?:[ \t]+- .+\n?)*)/m);
+  if (tagsBlock) {
+    const rawTags = tagsBlock[1].match(/- \[(.+)\]/);
     if (rawTags) fm.tags = rawTags[1];
+  } else if (tagsInline && tagsInline[1].trim()) {
+    fm.tags = tagsInline[1].trim();
   }
 
   return { fm, body };

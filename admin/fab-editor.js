@@ -86,21 +86,27 @@
     var excerptM = yaml.match(/^excerpt:\s*["']?(.+?)["']?\s*$/m);
     if (excerptM) fm.excerpt = excerptM[1].replace(/^["']|["']$/g, '').trim();
 
-    var catsSection = yaml.match(/^categories:\s*\n((?:[ \t]+- .+\n?)*)/m);
-    if (catsSection) {
-      var catsRaw = catsSection[1].match(/- (.+)/g);
+    var catsInline = yaml.match(/^categories:\s*(.+)$/m);
+    var catsBlock = yaml.match(/^categories:\s*\n((?:[ \t]+- .+\n?)*)/m);
+    if (catsBlock) {
+      var catsRaw = catsBlock[1].match(/- (.+)/g);
       if (catsRaw)
         fm.categories = catsRaw
           .map(function (s) {
             return s.replace('- ', '').trim();
           })
           .join(', ');
+    } else if (catsInline && catsInline[1].trim()) {
+      fm.categories = catsInline[1].trim();
     }
 
-    var tagsSection = yaml.match(/^tags:\s*\n((?:[ \t]+- .+\n?)*)/m);
-    if (tagsSection) {
-      var rawTags = tagsSection[1].match(/- \[(.+)\]/);
+    var tagsInline = yaml.match(/^tags:\s*(.+)$/m);
+    var tagsBlock = yaml.match(/^tags:\s*\n((?:[ \t]+- .+\n?)*)/m);
+    if (tagsBlock) {
+      var rawTags = tagsBlock[1].match(/- \[(.+)\]/);
       if (rawTags) fm.tags = rawTags[1];
+    } else if (tagsInline && tagsInline[1].trim()) {
+      fm.tags = tagsInline[1].trim();
     }
 
     return { fm: fm, body: body };
