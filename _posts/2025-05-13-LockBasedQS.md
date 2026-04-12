@@ -4,7 +4,7 @@ layout: post
 excerpt: "Lock Based Queue, Stack"
 
 categories:
-  - Cpp
+  - CS_Network
 tags:
   - [Network]
 
