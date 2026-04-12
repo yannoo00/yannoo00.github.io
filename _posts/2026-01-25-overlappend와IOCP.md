@@ -4,7 +4,7 @@ layout: post
 excerpt: "Network"
 
 categories:
-  - Network
+  - Cpp
 tags:
   - [Network, socket]
 
