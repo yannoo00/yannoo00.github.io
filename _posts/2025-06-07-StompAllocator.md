@@ -4,9 +4,9 @@ layout: post
 excerpt: "Allocator"
 
 categories:
-  - C++
+  - Cpp
 tags:
-  - [C++]
+  - [Cpp]
 
 toc: true
 toc_sticky: true
