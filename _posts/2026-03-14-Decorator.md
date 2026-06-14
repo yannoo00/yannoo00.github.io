@@ -19,7 +19,7 @@ Decorator 패턴은 객체에 동적으로 기능을 추가할 때 용이하다.
 이는 객체 지향의 SOLID 중 Open-close principle(OCP) 설계 기법과도 맞닿아 있다.  
 
 동적으로 기능을 추가하는 상황을 가정한 코드를 보자.  
-```C#
+```cs
 using System;
 
 // 1. Component (공통 인터페이스)
@@ -103,7 +103,7 @@ class Program
 이렇게 decorator 패턴으로 구현하면 새로운 기능의 추가/수정이 필요할 때 해당 decorator 하나만 작업하면 된다.  
 
 C#에서는 Stream을 이런 방식으로 구현하고 있다.  
-```C#
+```cs
 using System;
 using System.IO;
 using System.IO.Compression;

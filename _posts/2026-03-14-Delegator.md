@@ -24,7 +24,7 @@ delegate는 메서드의 참조를 나타내는 타입이다.
 따라서 delegate의 호출자는 **객체를 몰라도 객체의 메서드를 호출**할 수 있게 된다.  
 또 callback이 필요한 상황에서도 람다처럼 간단하게 && 재사용 가능하게 사용 가능하다.  
 
-```C#
+```cs
 //함수전달 
 MyDelegate d = new FunctionForTest(message); // instance 
 

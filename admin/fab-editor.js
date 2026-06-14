@@ -13,6 +13,19 @@
   var _mainEl = null; // main element (new flow)
   var _mainOriginalHTML = null;
   var _container = null;
+  var _dirty = false; // true once the user has edited anything
+
+  // ── DIRTY / NAVIGATION GUARD ─────────────────────────────
+  function markDirty() {
+    _dirty = true;
+  }
+
+  function beforeUnloadGuard(e) {
+    if (!_dirty) return;
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  }
 
   // ── API ──────────────────────────────────────────────────
   function getToken() {
@@ -54,6 +67,24 @@
     });
     if (!match) throw new Error('게시글을 찾을 수 없습니다: ' + decodedSlug);
     return match;
+  }
+
+  // Find the Actions workflow run whose head commit matches our push.
+  async function getRunForSha(sha) {
+    var data = await ghFetch(
+      '/repos/' +
+        OWNER +
+        '/' +
+        REPO +
+        '/actions/runs?branch=' +
+        BRANCH +
+        '&per_page=20',
+    );
+    var runs = data.workflow_runs || [];
+    for (var i = 0; i < runs.length; i++) {
+      if (runs[i].head_sha === sha) return runs[i];
+    }
+    return null;
   }
 
   // ── HELPERS ───────────────────────────────────────────────
@@ -206,6 +237,26 @@
       '.fab-ed-notice.show { opacity: 1; pointer-events: auto; }',
       '.fab-ed-notice.success { background: #198754; color: #fff; }',
       '.fab-ed-notice.error   { background: #dc3545; color: #fff; }',
+
+      '.fab-build {',
+      '  position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%);',
+      '  display: flex; align-items: center; gap: .55rem;',
+      '  padding: .6rem 1.1rem; border-radius: .6rem;',
+      '  font-size: .85rem; font-weight: 500; color: #fff;',
+      '  box-shadow: 0 4px 14px rgba(0,0,0,.18); z-index: 10000;',
+      '  opacity: 0; transition: opacity .25s; pointer-events: none;',
+      '}',
+      '.fab-build.show { opacity: 1; }',
+      '.fab-build.pending { background: #0d6efd; }',
+      '.fab-build.success { background: #198754; }',
+      '.fab-build.error   { background: #dc3545; }',
+      '.fab-build.info    { background: #6c757d; }',
+      '.fab-build-spinner {',
+      '  width: 14px; height: 14px; border-radius: 50%; flex: 0 0 auto;',
+      '  border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;',
+      '  animation: fab-build-spin .7s linear infinite;',
+      '}',
+      '@keyframes fab-build-spin { to { transform: rotate(360deg); } }',
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -226,6 +277,20 @@
     _noticeTimer = setTimeout(function () {
       _noticeEl.className = 'fab-ed-notice';
     }, 3500);
+  }
+
+  // ── BUILD STATUS (persistent banner) ─────────────────────
+  var _buildEl = null;
+
+  function showBuildStatus(msg, type, spin) {
+    if (!_buildEl) {
+      _buildEl = document.createElement('div');
+      document.body.appendChild(_buildEl);
+    }
+    _buildEl.className = 'fab-build show ' + (type || '');
+    _buildEl.innerHTML =
+      (spin ? '<span class="fab-build-spinner"></span>' : '') + '<span></span>';
+    _buildEl.lastChild.textContent = msg; // textContent → no HTML injection
   }
 
   // ── LOAD SCRIPT HELPER ───────────────────────────────────
@@ -258,7 +323,11 @@
   }
 
   // ── CANCEL / RESTORE ─────────────────────────────────────
-  function cancel() {
+  // Tear down the editor DOM and return the page to its pre-edit state.
+  function restore() {
+    window.removeEventListener('beforeunload', beforeUnloadGuard);
+    _dirty = false;
+
     if (_container) {
       _container.remove();
       _container = null;
@@ -277,6 +346,16 @@
       _mainEl = null;
     }
     _file = null;
+  }
+
+  function cancel() {
+    if (
+      _dirty &&
+      !window.confirm('작성 중이던 내용이 사라집니다. 정말 나가시겠습니까?')
+    ) {
+      return;
+    }
+    restore();
   }
 
   // ── BUILD EDITOR UI ───────────────────────────────────────
@@ -327,8 +406,92 @@
       minHeight: '500px',
     });
     _mde.value(body || '');
+
+    // Start clean: only flag dirty on edits made after initial population.
+    _dirty = false;
+    _mde.codemirror.on('change', markDirty);
+    [
+      'fab-fm-title',
+      'fab-fm-date',
+      'fab-fm-categories',
+      'fab-fm-tags',
+      'fab-fm-excerpt',
+    ].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('input', markDirty);
+    });
+    window.addEventListener('beforeunload', beforeUnloadGuard);
+
     document.getElementById('fab-save-btn').addEventListener('click', save);
     document.getElementById('fab-cancel-btn').addEventListener('click', cancel);
+  }
+
+  // ── WATCH BUILD ──────────────────────────────────────────
+  // Poll the Actions run for our commit and reload once it deploys.
+  function watchBuild(commitSha) {
+    var POLL_MS = 5000;
+    var DEADLINE = Date.now() + 6 * 60 * 1000; // 6분 안전장치
+
+    showBuildStatus('빌드 대기 중...', 'pending', true);
+
+    function poll(run) {
+      if (run && run.status === 'completed') {
+        if (run.conclusion === 'success') {
+          showBuildStatus('빌드 완료! 새로고침합니다...', 'success', false);
+          setTimeout(function () {
+            location.reload();
+          }, 1200);
+        } else if (run.conclusion === 'cancelled') {
+          showBuildStatus('이후 발행으로 대체되었습니다.', 'info', false);
+        } else {
+          showBuildStatus(
+            '빌드 실패 (' +
+              (run.conclusion || '오류') +
+              ') — Actions 로그를 확인하세요.',
+            'error',
+            false,
+          );
+        }
+        return;
+      }
+
+      if (Date.now() > DEADLINE) {
+        showBuildStatus(
+          '빌드가 예상보다 오래 걸립니다. 잠시 후 직접 새로고침하세요.',
+          'info',
+          false,
+        );
+        return;
+      }
+
+      showBuildStatus(
+        run && run.status === 'in_progress' ? '빌드 중...' : '빌드 대기 중...',
+        'pending',
+        true,
+      );
+      scheduleNext(run);
+    }
+
+    function scheduleNext(lastRun) {
+      setTimeout(function () {
+        getRunForSha(commitSha)
+          .then(poll)
+          .catch(function () {
+            poll(lastRun); // 일시 오류: 마지막 상태 유지하고 계속 재시도
+          });
+      }, POLL_MS);
+    }
+
+    // 첫 호출로 Actions 조회 권한이 있는지 확인한다.
+    getRunForSha(commitSha)
+      .then(poll)
+      .catch(function () {
+        showBuildStatus(
+          '발행 완료. 빌드 상태 자동 확인은 토큰에 Actions 읽기 권한이 필요합니다. 잠시 후 새로고침하세요.',
+          'info',
+          false,
+        );
+      });
   }
 
   // ── SAVE ─────────────────────────────────────────────────
@@ -378,25 +541,18 @@
           body: JSON.stringify(payload),
         },
       );
-      if (isNew) {
-        _file = { path: result.content.path, sha: result.content.sha };
-        saveBtn.textContent = '저장';
-        showNotice(
-          '발행되었습니다! GitHub Actions가 빌드를 시작합니다.',
-          'success',
-        );
+      // Publish succeeded — exit the editor and track the build.
+      _dirty = false;
+      restore();
+      var commitSha = result.commit && result.commit.sha;
+      if (commitSha) {
+        watchBuild(commitSha);
       } else {
-        _file.sha = result.content.sha;
-        saveBtn.textContent = '저장';
-        showNotice(
-          '저장되었습니다! GitHub Actions가 빌드를 시작합니다.',
-          'success',
-        );
+        showBuildStatus('발행 완료. 잠시 후 새로고침하세요.', 'info', false);
       }
     } catch (e) {
       showNotice((isNew ? '발행' : '저장') + ' 실패: ' + e.message, 'error');
       saveBtn.textContent = isNew ? '발행' : '저장';
-    } finally {
       saveBtn.disabled = false;
     }
   }
