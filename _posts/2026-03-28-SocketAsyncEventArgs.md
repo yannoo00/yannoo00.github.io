@@ -17,4 +17,4 @@ last_modified_at: 2026-03-28
 
 ### SocketAsyncEventArgs  
 
-C#에서 네트워크 라이브러리를 구성할 때 사용할 수 있는 SocketAsyncEventArgs에 대해 정리한다.
+SocketAsyncEvnetArgs는 비동기 소켓 작업(Accept, Receive, Send, ...)을 수행할 때 재사용이 가능한 콘텍스트 객체이다.  
