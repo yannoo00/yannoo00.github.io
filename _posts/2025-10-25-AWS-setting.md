@@ -4,7 +4,7 @@ layout: post
 excerpt: "AWS setting"
 
 categories:
-  - Cloud_AWS
+  - Cloud
 tags:
   - [AWS, database]
 
