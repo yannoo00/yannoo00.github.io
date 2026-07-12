@@ -1,5 +1,5 @@
 ---
-title:  "Web, WAS 서버와 Vercel"
+title:  "Web, WAS 서버"
 layout: post
 excerpt: ""
 
@@ -26,7 +26,8 @@ node js를 주로 사용하다보니 이런 개념이 헷갈렸다. 직접 코�
 GET /index.html HTTP/1.1 ...이런 요청을 파싱해서 index.html 정적 파일을 서빙해주는 것이다.  
 마찬가지로 백엔드 - WAS도, DB에서 정보를 가져와야 할 경우 이 Web서버가 WAS로 'user A정보 줘라' 같은 요청을 보낼 것이고 그걸 받아서 DB왕복 후 돌려주는 역할을 하고, 내가 짜둔 코드를 기반으로 들어오는 요청을 읽고 코드를 찾아가는 기능을 WAS가 처리한다.  
 
-```C#
+
+```cs
 // C#이나 C++로 바닥부터 소켓 서버를 만들 때의 대략적인 모습
 void Main() {
     // 1. 8080 포트를 열고 대기한다 (Bind & Listen)
@@ -60,6 +61,7 @@ void HandleClient(Socket client) {
     client.Close();
 }
 ```  
+
 C#으로 소켓 통신을 한다고 하자. 무한루프를 돌리면서 클라이언트 요청을 대기하다가 들어온 요청을 파싱해서 적절한 handler를 호출하는 방식을 떠올릴 수 있다. 결국 모든 서버는 클라 요청을 대기하고 -> 받아서 처리. 이걸 반복한다. 이런 기능을 지원해주는 다양한 프레임워크가 있다. express, ASP.NET 등...  
 ```js
 import express from 'express';
@@ -81,6 +83,4 @@ Node.js에서는 이제 웹 프레임워크에 이런 WAS 기능이 통합되어
 
 그럼 이렇게 client(브라우저) -> nginx -> WAS를 거치는 동적 데이터에 대한 요청이 어떻게 처리될지 생각해보자.  
 우선 클라가 프론트엔드 index 페이지에 접근한다 -> 거기에는 유저 닉네임을 보여주는 ui가 있는데, 프론트엔드에서는 fetch를 통해 이 데이터를 가져온다.  nginx는 우선 이 브라우저에게 index 정적 파일을 다 준다. 브라우저는 그걸 실행한다. html -> css -> js 순서로.. 이 때 js 파일 중 fetch()가 있다. 브라우저가 이걸 실행한다 -> api/user/어쩌구.. 가 있다.  이게 nginx에게 간다.  
-nginx는 이걸 WAS쪽으로 토스한다. WAS에서는 이 api에 해당하는 코드가 실행되고 데이터를 얻어와 nginx에게 다시 전달, nginx가 최종적으로 클라이언트에게 전달한다.  
-
-
+nginx는 이걸 WAS쪽으로 토스한다. WAS에서는 이 api에 해당하는 코드가 실행되고 데이터를 얻어와 nginx에게 다시 전달, nginx가 최종적으로 클라이언트에게 전달한다.
