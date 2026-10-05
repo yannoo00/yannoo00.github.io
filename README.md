@@ -1,43 +1,35 @@
-# Chirpy Starter
+# YannooHub
 
-[![Gem Version](https://img.shields.io/gem/v/jekyll-theme-chirpy)][gem]&nbsp;
-[![GitHub license](https://img.shields.io/github/license/cotes2020/chirpy-starter.svg?color=blue)][mit]
+[yannoo00.github.io](https://yannoo00.github.io) 블로그. React(Vite + TypeScript)로 만든 정적 사이트이고, GitHub Actions가 빌드해 GitHub Pages에 배포한다.
 
-When installing the [**Chirpy**][chirpy] theme through [RubyGems.org][gem], Jekyll can only read files in the folders
-`_data`, `_layouts`, `_includes`, `_sass` and `assets`, as well as a small part of options of the `_config.yml` file
-from the theme's gem. If you have ever installed this theme gem, you can use the command
-`bundle info --path jekyll-theme-chirpy` to locate these files.
+## 구조
 
-The Jekyll team claims that this is to leave the ball in the user’s court, but this also results in users not being
-able to enjoy the out-of-the-box experience when using feature-rich themes.
-
-To fully use all the features of **Chirpy**, you need to copy the other critical files from the theme's gem to your
-Jekyll site. The following is a list of targets:
-
-```shell
-.
-├── _config.yml
-├── _plugins
-├── _tabs
-└── index.html
+```
+content/posts/   글 (front matter가 붙은 마크다운, 파일명은 YYYY-MM-DD-제목.md)
+content/about.md About 페이지 내용
+public/          그대로 서빙되는 파일. 에디터로 올린 이미지는 public/img/posts/ 에 쌓인다
+src/             읽기 화면과 관리 화면(src/admin)
+build/           빌드 때 글 목록·검색 인덱스·피드·경로별 index.html을 만드는 Vite 플러그인
 ```
 
-To save you time, and also in case you lose some files while copying, we extract those files/configurations of the
-latest version of the **Chirpy** theme and the [CD][CD] workflow to here, so that you can start writing in minutes.
+글 주소는 파일명에서 날짜를 뺀 부분으로 정해진다 (`/posts/제목/`). 파일명을 바꾸면 주소도 바뀐다.
 
-## Usage
+## 글 쓰기
 
-Check out the [theme's docs](https://github.com/cotes2020/jekyll-theme-chirpy/wiki).
+사이트의 `/admin/` 에서 GitHub fine-grained 토큰(이 리포의 Contents: Read and write)으로 로그인한 뒤 브라우저에서 쓴다.
+발행하면 글과 이미지가 커밋 하나로 `main`에 올라가고, 1~2분 뒤 사이트에 반영된다.
 
-## Contributing
+- 이미지는 본문에 붙여넣거나 끌어다 놓으면 WebP로 변환되어 들어간다.
+- "이 글의 이미지"에서 자르기, 회전, 크기 조절을 할 수 있다.
 
-This repository is automatically updated with new releases from the theme repository. If you encounter any issues or want to contribute to its improvement, please visit the [theme repository][chirpy] to provide feedback.
+`content/posts/` 에 마크다운 파일을 직접 추가하고 push해도 된다.
 
-## License
+## 개발
 
-This work is published under [MIT][mit] License.
+```sh
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # dist/ 에 배포용 파일 생성
+```
 
-[gem]: https://rubygems.org/gems/jekyll-theme-chirpy
-[chirpy]: https://github.com/cotes2020/jekyll-theme-chirpy/
-[CD]: https://en.wikipedia.org/wiki/Continuous_deployment
-[mit]: https://github.com/cotes2020/chirpy-starter/blob/master/LICENSE
+사이트 제목과 대상 리포지토리 설정은 `src/config.ts` 에 있다.
