@@ -104,16 +104,24 @@ export async function prepareUpload(file: Blob): Promise<Blob> {
   return encode(canvas)
 }
 
-export const canEdit = (url: string) => !/\.(gif|svg)$/i.test(url)
+/** draw.io로 그린 그림. SVG 안에 도형 원본이 들어 있어 다시 열어 고칠 수 있다. */
+const DIAGRAM_EXT = 'drawio.svg'
+
+export const isDiagram = (url: string) => url.toLowerCase().endsWith(`.${DIAGRAM_EXT}`)
+
+export const canEdit = (url: string) => isDiagram(url) || !/\.(gif|svg)$/i.test(url)
 
 /** 글 주소가 바뀌어도 깨지지 않도록 날짜와 임의 값으로 이름을 짓는다. */
-export function newImageUrl(blob: Blob): string {
+function newUrl(ext: string): string {
   const now = new Date()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const id = now.getTime().toString(36) + Math.random().toString(36).slice(2, 6)
-  const ext = EXTENSIONS[blob.type] ?? 'png'
   return `${REPO.imageUrlPrefix}/${now.getFullYear()}/${month}/${id}.${ext}`
 }
+
+export const newImageUrl = (blob: Blob) => newUrl(EXTENSIONS[blob.type] ?? 'png')
+
+export const newDiagramUrl = () => newUrl(DIAGRAM_EXT)
 
 export const repoPathForImage = (url: string) => REPO.publicDir + url
 

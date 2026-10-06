@@ -6,10 +6,12 @@ import { REPO } from '../config'
 import { usePosts } from '../lib/data'
 import { parsePost, readFields, serializePost, type FrontMatter } from '../lib/frontmatter'
 import { actionsUrl, commitFiles, readBinaryFile, readTextFile, type FileChange } from '../lib/github'
-import { canEdit, findImageUrls, newImageUrl, prepareUpload, repoPathForImage } from '../lib/image'
+import { canEdit, findImageUrls, isDiagram, newDiagramUrl, newImageUrl, prepareUpload, repoPathForImage } from '../lib/image'
 import { dateFromFilename, postUrl, slugFromFilename, slugify } from '../lib/slug'
 import { useTitle } from '../lib/useTitle'
+import DiagramEditor from './DiagramEditor'
 import ImageEditor from './ImageEditor'
+import RichEditor, { type RichEditorHandle } from './RichEditor'
 
 const today = () => {
   const now = new Date()
@@ -20,6 +22,17 @@ const splitList = (text: string) => [...new Set(text.split(',').map((s) => s.tri
 const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err))
 const isPostPath = (path: string) =>
   path.startsWith(`${REPO.postsDir}/`) && path.endsWith('.md') && !path.includes('..')
+
+type Mode = 'rich' | 'markdown'
+const MODE_KEY = 'editor-mode'
+
+function storedMode(): Mode {
+  try {
+    return localStorage.getItem(MODE_KEY) === 'markdown' ? 'markdown' : 'rich'
+  } catch {
+    return 'rich'
+  }
+}
 
 interface Saved {
   path: string
@@ -55,8 +68,14 @@ export default function Editor() {
   /** 배포 전에도 미리보기가 보이도록 붙들어 두는 로컬 주소 */
   const [previews, setPreviews] = useState<Map<string, string>>(new Map())
   const [editing, setEditing] = useState<{ url: string; blob: Blob } | null>(null)
+  /** 열려 있는 다이어그램 창. url이 null이면 새로 그리는 중이다 */
+  const [diagram, setDiagram] = useState<{ url: string | null; source: string | null } | null>(null)
   const [busyImage, setBusyImage] = useState(false)
 
+  const [mode, setMode] = useState<Mode>(storedMode)
+  /** 본문을 편집기 밖에서 바꿨을 때 올려서 편집기를 새 본문으로 다시 띄운다 */
+  const [richKey, setRichKey] = useState(0)
+  const rich = useRef<RichEditorHandle>(null)
   const textarea = useRef<HTMLTextAreaElement>(null)
   // 방금 저장하면서 스스로 바꾼 주소는 다시 불러오지 않는다
   const loadedPath = useRef<string | null>(null)
@@ -76,6 +95,7 @@ export default function Editor() {
     setTags(fields.tags.join(', '))
     setExcerpt(fields.excerpt)
     setBody(text)
+    setRichKey((key) => key + 1)
     setPending(new Map())
     setRemoved(new Set())
     setPreviews((prev) => {
@@ -159,7 +179,29 @@ export default function Editor() {
   }
 
   const resolveImage = useCallback((src: string) => previews.get(src) ?? src, [previews])
+  // 편집기는 올리자마자 이미지를 그리므로 다음 렌더를 기다리지 않고 최신 주소를 읽는다
+  const resolveLatestImage = useCallback((src: string) => previewsRef.current.get(src) ?? src, [])
   const images = useMemo(() => findImageUrls(body), [body])
+
+  /** 편집기에 방금 친 내용까지 담긴 지금 본문 */
+  const currentBody = () => (mode === 'rich' ? rich.current?.getMarkdown() : undefined) ?? body
+
+  /** 이미지 목록처럼 편집기 밖에서 본문을 고친다. */
+  const rewriteBody = (text: string) => {
+    edit(setBody)(text)
+    setRichKey((key) => key + 1)
+  }
+
+  const switchMode = (next: Mode) => {
+    if (next === mode) return
+    setBody(currentBody())
+    setMode(next)
+    try {
+      localStorage.setItem(MODE_KEY, next)
+    } catch {
+      // 저장하지 못해도 이번 화면에서는 그대로 쓴다
+    }
+  }
 
   const insertAtCursor = (text: string) => {
     const el = textarea.current
@@ -168,19 +210,46 @@ export default function Editor() {
     edit(setBody)(el.value)
   }
 
+  /** 발행할 때 함께 커밋되도록 대기 목록에 넣고, 그 전에도 화면에 보이게 한다. */
+  const stage = (url: string, blob: Blob) => {
+    const preview = URL.createObjectURL(blob)
+    previewsRef.current = new Map(previewsRef.current).set(url, preview)
+    setPending((prev) => new Map(prev).set(url, blob))
+    setPreviews((prev) => new Map(prev).set(url, preview))
+  }
+
+  /** 이미지를 올리기 좋게 바꿔 대기 목록에 넣고, 본문에 적을 주소를 돌려준다. */
+  const stageImage = async (file: File) => {
+    const blob = await prepareUpload(file)
+    const url = newImageUrl(blob)
+    stage(url, blob)
+    return url
+  }
+
   const addImages = async (files: File[]) => {
     setBusyImage(true)
     setMessage(null)
     try {
-      for (const file of files) {
-        const blob = await prepareUpload(file)
-        const url = newImageUrl(blob)
-        setPending((prev) => new Map(prev).set(url, blob))
-        setPreviews((prev) => new Map(prev).set(url, URL.createObjectURL(blob)))
-        insertAtCursor(`![](${url})\n`)
-      }
+      for (const file of files) insertAtCursor(`![](${await stageImage(file)})\n`)
     } catch (err) {
       setMessage({ kind: 'error', text: errorText(err) })
+    } finally {
+      setBusyImage(false)
+    }
+  }
+
+  /** 편집기에 붙여넣거나 끌어다 놓은 이미지 */
+  const uploadFromEditor = async (file: File) => {
+    setBusyImage(true)
+    setMessage(null)
+    try {
+      const url = await stageImage(file)
+      markDirty(true)
+      setSaved(null)
+      return url
+    } catch (err) {
+      setMessage({ kind: 'error', text: errorText(err) })
+      throw err
     } finally {
       setBusyImage(false)
     }
@@ -203,15 +272,19 @@ export default function Editor() {
     void addImages(files)
   }
 
+  const onSaveKey = (e: KeyboardEvent<HTMLElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      e.preventDefault()
+      void save()
+    }
+  }
+
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Tab' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
       insertAtCursor('  ')
     }
-    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-      e.preventDefault()
-      void save()
-    }
+    onSaveKey(e)
   }
 
   /** 본문에서 이미지를 빼고, 이미 올라간 파일이면 저장할 때 지우도록 표시한다. */
@@ -230,10 +303,10 @@ export default function Editor() {
   const removeImage = (url: string) => {
     if (!window.confirm('이 이미지를 글에서 빼고 삭제할까요?')) return
     const escaped = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const cleaned = body
+    const cleaned = currentBody()
       .replace(new RegExp(`!\\[[^\\]]*\\]\\(${escaped}[^)]*\\)\\n?`, 'g'), '')
       .replace(new RegExp(`<img[^>]*${escaped}[^>]*>\\n?`, 'g'), '')
-    edit(setBody)(cleaned)
+    rewriteBody(cleaned)
     dropImage(url)
   }
 
@@ -250,7 +323,8 @@ export default function Editor() {
             ? await res.blob()
             : await readBinaryFile(repoPathForImage(url))
       }
-      setEditing({ url, blob })
+      if (isDiagram(url)) setDiagram({ url, source: await blob.text() })
+      else setEditing({ url, blob })
     } catch (err) {
       setMessage({ kind: 'error', text: `이미지를 불러오지 못했습니다. ${errorText(err)}` })
     } finally {
@@ -258,14 +332,35 @@ export default function Editor() {
     }
   }
 
+  /** 고친 그림을 새 파일로 올리고 본문의 주소를 바꾼다. 옛 파일은 발행할 때 지워진다. */
+  const swapImage = (oldUrl: string, url: string, blob: Blob) => {
+    dropImage(oldUrl)
+    stage(url, blob)
+    rewriteBody(currentBody().split(oldUrl).join(url))
+  }
+
   const replaceImage = (blob: Blob) => {
     if (!editing) return
-    const url = newImageUrl(blob)
-    dropImage(editing.url)
-    setPending((prev) => new Map(prev).set(url, blob))
-    setPreviews((prev) => new Map(prev).set(url, URL.createObjectURL(blob)))
-    edit(setBody)(body.split(editing.url).join(url))
+    swapImage(editing.url, newImageUrl(blob), blob)
     setEditing(null)
+  }
+
+  const saveDiagram = (svg: Blob) => {
+    if (!diagram) return
+    const url = newDiagramUrl()
+    if (diagram.url) {
+      swapImage(diagram.url, url, svg)
+    } else {
+      stage(url, svg)
+      if (mode === 'rich' && rich.current) {
+        rich.current.insertImage(url)
+        markDirty(true)
+        setSaved(null)
+      } else {
+        insertAtCursor(`![](${url})\n`)
+      }
+    }
+    setDiagram(null)
   }
 
   const save = async () => {
@@ -296,9 +391,10 @@ export default function Editor() {
     else delete data.excerpt
     if (path) data.last_modified_at = today()
 
-    const used = new Set(findImageUrls(body))
+    const text = currentBody()
+    const used = new Set(findImageUrls(text))
     const changes: FileChange[] = [
-      { path: target, content: serializePost(data, body) },
+      { path: target, content: serializePost(data, text) },
       ...[...pending].filter(([url]) => used.has(url)).map(([url, blob]) => ({ path: repoPathForImage(url), content: blob })),
       ...[...removed].filter((url) => !used.has(url)).map((url) => ({ path: repoPathForImage(url), content: null })),
     ]
@@ -307,6 +403,7 @@ export default function Editor() {
     setMessage(null)
     try {
       await commitFiles(`${path ? 'Update' : 'Create'}: ${cleanTitle}`, changes)
+      setBody(text)
       setOriginal(data)
       setPending(new Map())
       setRemoved(new Set())
@@ -339,6 +436,14 @@ export default function Editor() {
           <Link to="/admin/">← 목록</Link>
           <span className="spacer" />
           {dirty && <span className="hint">저장하지 않은 변경이 있습니다</span>}
+          <div className="mode-switch" role="group" aria-label="편집 방식">
+            <button type="button" className={mode === 'rich' ? 'active' : ''} onClick={() => switchMode('rich')}>
+              편집기
+            </button>
+            <button type="button" className={mode === 'markdown' ? 'active' : ''} onClick={() => switchMode('markdown')}>
+              마크다운
+            </button>
+          </div>
           <button type="button" className="primary" disabled={saving || busyImage} onClick={save}>
             {saving ? '커밋 중…' : path ? '수정 내용 발행' : '발행'}
           </button>
@@ -377,45 +482,66 @@ export default function Editor() {
           </label>
         </div>
 
-        <div className="editor-panes">
-          <div className="editor-pane">
-            <div className="pane-head">
-              <span>마크다운</span>
-              <label className="file-button">
-                {busyImage ? '이미지 처리 중…' : '이미지 추가'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  hidden
-                  onChange={(e) => {
-                    void addImages(imageFiles(e.target.files))
-                    e.target.value = ''
-                  }}
-                />
-              </label>
-            </div>
-            <textarea
-              ref={textarea}
-              value={body}
-              spellCheck={false}
-              placeholder="여기에 글을 쓰세요. 이미지는 붙여넣거나 끌어다 놓으면 됩니다."
-              onChange={(e) => edit(setBody)(e.target.value)}
-              onPaste={onPaste}
-              onDrop={onDrop}
-              onKeyDown={onKeyDown}
+        {mode === 'rich' && (
+          <div className="editor-rich" onKeyDown={onSaveKey}>
+            <RichEditor
+              key={richKey}
+              ref={rich}
+              initialValue={body}
+              onChange={edit(setBody)}
+              onUploadImage={uploadFromEditor}
+              onInsertDiagram={() => setDiagram({ url: null, source: null })}
+              resolveImage={resolveLatestImage}
             />
           </div>
-          <div className="editor-pane">
-            <div className="pane-head">
-              <span>미리보기</span>
+        )}
+
+        {mode === 'markdown' && (
+          <div className="editor-panes">
+            <div className="editor-pane">
+              <div className="pane-head">
+                <span>마크다운</span>
+                <span className="pane-actions">
+                  <button type="button" className="file-button" onClick={() => setDiagram({ url: null, source: null })}>
+                    다이어그램
+                  </button>
+                  <label className="file-button">
+                    {busyImage ? '이미지 처리 중…' : '이미지 추가'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      hidden
+                      onChange={(e) => {
+                        void addImages(imageFiles(e.target.files))
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                </span>
+              </div>
+              <textarea
+                ref={textarea}
+                value={body}
+                spellCheck={false}
+                placeholder="여기에 글을 쓰세요. 이미지는 붙여넣거나 끌어다 놓으면 됩니다."
+                onChange={(e) => edit(setBody)(e.target.value)}
+                onPaste={onPaste}
+                onDrop={onDrop}
+                onKeyDown={onKeyDown}
+              />
             </div>
-            <div className="content preview">
-              {title && <h1>{title}</h1>}
-              <Markdown body={body} resolveImage={resolveImage} />
+            <div className="editor-pane">
+              <div className="pane-head">
+                <span>미리보기</span>
+              </div>
+              <div className="content preview">
+                {title && <h1>{title}</h1>}
+                <Markdown body={body} resolveImage={resolveImage} />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {images.length > 0 && (
           <section className="editor-images">
@@ -443,6 +569,7 @@ export default function Editor() {
       </div>
 
       {editing && <ImageEditor source={editing.blob} onSave={replaceImage} onClose={() => setEditing(null)} />}
+      {diagram && <DiagramEditor source={diagram.source} onSave={saveDiagram} onClose={() => setDiagram(null)} />}
     </Page>
   )
 }

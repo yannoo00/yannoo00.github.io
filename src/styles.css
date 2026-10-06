@@ -927,6 +927,55 @@ textarea {
   font-weight: 600;
 }
 
+.mode-switch {
+  display: flex;
+}
+
+.mode-switch button {
+  padding: 0.2rem 0.75rem;
+  border-radius: 0;
+  font-size: 0.8rem;
+}
+
+.mode-switch button:first-child {
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.mode-switch button:last-child {
+  margin-left: -1px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.mode-switch button.active {
+  background: var(--heading);
+  border-color: var(--heading);
+  color: var(--bg);
+}
+
+/* 글을 읽을 때와 같은 폭과 글꼴로 쓴다 */
+.editor-rich {
+  max-width: 860px;
+  min-height: 60vh;
+  margin: 0 auto;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.editor-rich .milkdown {
+  --crepe-color-background: transparent;
+  --crepe-color-on-background: var(--text);
+  --crepe-color-inline-code: var(--text);
+  --crepe-font-title: var(--font-base);
+  --crepe-font-default: var(--font-base);
+  --crepe-font-code: var(--font-code);
+}
+
+.editor-rich .milkdown .ProseMirror {
+  min-height: 60vh;
+  /* 왼쪽은 블록 손잡이(+, 끌기)가 놓일 자리 */
+  padding: 1.5rem 2rem 6rem 4.5rem;
+}
+
 .editor-panes {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -960,6 +1009,11 @@ textarea {
 .file-button {
   padding: 0.15rem 0.7rem;
   font-size: 0.8rem;
+}
+
+.pane-actions {
+  display: flex;
+  gap: 0.4rem;
 }
 
 .editor-pane textarea {
@@ -1075,6 +1129,17 @@ textarea {
 
 .modal > footer {
   border-top: 1px solid var(--border);
+}
+
+.modal.diagram-editor {
+  width: 100%;
+  height: 100%;
+}
+
+.diagram-editor iframe {
+  flex: 1;
+  width: 100%;
+  border: 0;
 }
 
 .image-stage {
