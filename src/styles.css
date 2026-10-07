@@ -976,6 +976,19 @@ textarea {
   padding: 1.5rem 2rem 6rem 4.5rem;
 }
 
+.editor-rich .html-image {
+  display: block;
+}
+
+/* 여러 장을 나란히 놓은 글도 있으므로 한 줄을 차지하게 만들지 않는다 */
+.editor-rich .html-image img {
+  max-width: 100%;
+  height: auto;
+  margin: 0.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
 .editor-panes {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -11,8 +11,9 @@ import { table } from '@milkdown/crepe/feature/table'
 import { toolbar } from '@milkdown/crepe/feature/toolbar'
 import { imageBlockSchema } from '@milkdown/kit/component/image-block'
 import { commandsCtx, remarkStringifyOptionsCtx } from '@milkdown/kit/core'
-import { addBlockTypeCommand, clearTextInCurrentBlockCommand } from '@milkdown/kit/preset/commonmark'
-import { $remark } from '@milkdown/kit/utils'
+import { addBlockTypeCommand, clearTextInCurrentBlockCommand, htmlSchema } from '@milkdown/kit/preset/commonmark'
+import { $remark, $view } from '@milkdown/kit/utils'
+import DOMPurify from 'dompurify'
 import { defaultHandlers } from 'mdast-util-to-markdown'
 import { useEffect, useImperativeHandle, useRef, type Ref } from 'react'
 import '@milkdown/crepe/theme/common/prosemirror.css'
@@ -79,6 +80,7 @@ const languages = [
 
 interface MdNode {
   type: string
+  value?: string
   title?: string | null
   alt?: string | null
   children?: MdNode[]
@@ -97,6 +99,56 @@ function fillImageAttrs(node: MdNode) {
 }
 
 const remarkImageAttrs = $remark('blogImageAttrs', () => () => fillImageAttrs as never)
+
+const IMG_THEN_TEXT = /^(<img\b[^>]*>)[ \t]*\r?\n([\s\S]*\S[\s\S]*)$/i
+
+/**
+ * `<img …>` 바로 아랫줄에 글을 이어 쓰면 마크다운은 빈 줄이 나올 때까지를 HTML 한 덩어리로 읽어,
+ * 편집기에서 그림도 글도 고칠 수 없는 글자 뭉치가 된다. 태그와 그 뒤의 글을 나눠 읽는다.
+ */
+const remarkSplitImageHtml = $remark('blogSplitImageHtml', () =>
+  function (this: { parse: (text: string) => MdNode }) {
+    // 편집기가 먼저 HTML 덩어리를 문단으로 한 번 감싸 두므로 그 안쪽도 본다
+    const htmlOf = (node: MdNode) =>
+      node.type === 'paragraph' && node.children?.length === 1 ? node.children[0] : node
+    const split = (nodes: MdNode[]): MdNode[] =>
+      nodes.flatMap((node) => {
+        const html = htmlOf(node)
+        const m = html.type === 'html' ? html.value?.match(IMG_THEN_TEXT) : null
+        if (!m) return [node]
+        const image = { type: 'paragraph', children: [{ type: 'html', value: m[1] }] }
+        return [image, ...split(this.parse(m[2]).children ?? [])]
+      })
+    return (tree: MdNode) => {
+      tree.children = split(tree.children ?? [])
+    }
+  } as never,
+)
+
+/**
+ * 그림이 들어 있는 HTML은 태그 글자 대신 그려서 보여 준다.
+ * 화면에만 그렇게 보이고, 저장할 때는 적힌 HTML 그대로 나간다.
+ */
+const htmlImageView = (resolveImage: (src: string) => string) =>
+  $view(htmlSchema.node, () => (node) => {
+    const value = String(node.attrs.value)
+    const dom = document.createElement('span')
+    dom.dataset.type = 'html'
+    dom.dataset.value = value
+
+    if (!/<img\b/i.test(value)) {
+      dom.textContent = value
+      return { dom }
+    }
+
+    dom.className = 'html-image'
+    dom.innerHTML = DOMPurify.sanitize(value)
+    dom.querySelectorAll('img').forEach((img) => {
+      const src = img.getAttribute('src')
+      if (src) img.src = resolveImage(src)
+    })
+    return { dom }
+  })
 
 export default function RichEditorView({
   ref,
@@ -179,7 +231,11 @@ export default function RichEditorView({
       .addFeature(placeholder, { text: "글을 쓰거나 '/' 를 눌러 블록을 고르세요", mode: 'block' })
       .addFeature(table)
 
-    crepe.editor.use(remarkImageAttrs).config((ctx) => {
+    crepe.editor
+      .use(remarkImageAttrs)
+      .use(remarkSplitImageHtml)
+      .use(htmlImageView((src) => callbacks.current.resolveImage(src)))
+      .config((ctx) => {
       ctx.update(remarkStringifyOptionsCtx, (prev) => ({
         ...prev,
         bullet: '-' as const,
