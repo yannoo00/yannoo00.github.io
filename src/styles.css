@@ -919,10 +919,6 @@ textarea {
   font-size: 0.75rem;
 }
 
-.editor-fields .field-wide {
-  grid-column: 1 / -1;
-}
-
 .editor-fields .field-title input {
   font-weight: 600;
 }

@@ -50,7 +50,6 @@ export default function Editor() {
   const [date, setDate] = useState(today)
   const [categories, setCategories] = useState('')
   const [tags, setTags] = useState('')
-  const [excerpt, setExcerpt] = useState('')
   const [body, setBody] = useState('')
   const [original, setOriginal] = useState<FrontMatter>({})
 
@@ -87,13 +86,12 @@ export default function Editor() {
   }
 
   /** 다른 글로 넘어갈 때 입력값과 이미지 상태를 새로 채운다. */
-  const fill = (data: FrontMatter, fields: { title: string; date: string; categories: string[]; tags: string[]; excerpt: string }, text: string) => {
+  const fill = (data: FrontMatter, fields: { title: string; date: string; categories: string[]; tags: string[] }, text: string) => {
     setOriginal(data)
     setTitle(fields.title)
     setDate(fields.date)
     setCategories(fields.categories.join(', '))
     setTags(fields.tags.join(', '))
-    setExcerpt(fields.excerpt)
     setBody(text)
     setRichKey((key) => key + 1)
     setPending(new Map())
@@ -111,7 +109,7 @@ export default function Editor() {
     if (path === loadedPath.current) return
     if (!path) {
       loadedPath.current = null
-      fill({}, { title: '', date: today(), categories: [], tags: [], excerpt: '' }, '')
+      fill({}, { title: '', date: today(), categories: [], tags: [] }, '')
       setLoadError('')
       setLoading(false)
       return
@@ -386,9 +384,8 @@ export default function Editor() {
       categories: splitList(categories),
       tags: splitList(tags),
     }
-    // 비어 있는 요약은 적지 않는다. 목록에서는 본문 앞부분이 대신 쓰인다
-    if (excerpt.trim()) data.excerpt = excerpt.trim()
-    else delete data.excerpt
+    // 요약 입력은 없앴다. 예전 글에 남아 있는 값은 고칠 때 함께 지운다
+    delete data.excerpt
     if (path) data.last_modified_at = today()
 
     const text = currentBody()
@@ -475,10 +472,6 @@ export default function Editor() {
           <label>
             <span>태그 (쉼표로 구분)</span>
             <input value={tags} onChange={(e) => edit(setTags)(e.target.value)} placeholder="TCP, 혼잡 제어" />
-          </label>
-          <label className="field-wide">
-            <span>요약 (비우면 본문 앞부분을 씁니다)</span>
-            <input value={excerpt} onChange={(e) => edit(setExcerpt)(e.target.value)} />
           </label>
         </div>
 

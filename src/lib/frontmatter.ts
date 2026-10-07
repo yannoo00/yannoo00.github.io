@@ -7,7 +7,6 @@ export interface PostFields {
   date: string
   categories: string[]
   tags: string[]
-  excerpt: string
 }
 
 const FM_RE = /^﻿?---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)([\s\S]*)$/
@@ -44,7 +43,6 @@ export function readFields(data: FrontMatter, fallback: { title: string; date: s
       : fallback.date,
     categories: [...new Set(toList(data.categories))],
     tags: [...new Set(toList(data.tags))],
-    excerpt: data.excerpt == null ? '' : String(data.excerpt).trim(),
   }
 }
 

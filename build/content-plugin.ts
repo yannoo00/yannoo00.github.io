@@ -41,7 +41,7 @@ function loadPosts(root: string): LoadedPost[] {
         date: fields.date,
         categories: fields.categories,
         tags: fields.tags,
-        excerpt: fields.excerpt || plainText(body).slice(0, EXCERPT_LENGTH),
+        excerpt: plainText(body).slice(0, EXCERPT_LENGTH),
         path: `${REPO.postsDir}/${filename}`,
       },
       body,
