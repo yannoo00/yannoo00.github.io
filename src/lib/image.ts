@@ -112,16 +112,22 @@ export const isDiagram = (url: string) => url.toLowerCase().endsWith(`.${DIAGRAM
 export const canEdit = (url: string) => isDiagram(url) || !/\.(gif|svg)$/i.test(url)
 
 /** 글 주소가 바뀌어도 깨지지 않도록 날짜와 임의 값으로 이름을 짓는다. */
-function newUrl(ext: string): string {
+function newUrl(ext: string, prefix: string = REPO.imageUrlPrefix): string {
   const now = new Date()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const id = now.getTime().toString(36) + Math.random().toString(36).slice(2, 6)
-  return `${REPO.imageUrlPrefix}/${now.getFullYear()}/${month}/${id}.${ext}`
+  return `${prefix}/${now.getFullYear()}/${month}/${id}.${ext}`
 }
 
 export const newImageUrl = (blob: Blob) => newUrl(EXTENSIONS[blob.type] ?? 'png')
 
 export const newDiagramUrl = () => newUrl(DIAGRAM_EXT)
+
+/** 첨부 파일 주소. 파일 이름의 글자가 주소에 섞이지 않도록 확장자만 남긴다. */
+export function newFileUrl(name: string): string {
+  const ext = name.match(/\.([A-Za-z0-9]{1,8})$/)?.[1]?.toLowerCase() ?? 'bin'
+  return newUrl(ext, REPO.fileUrlPrefix)
+}
 
 export const repoPathForImage = (url: string) => REPO.publicDir + url
 
@@ -129,5 +135,12 @@ export const repoPathForImage = (url: string) => REPO.publicDir + url
 export function findImageUrls(body: string): string[] {
   const escaped = REPO.imageUrlPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const pattern = new RegExp(`${escaped}/[\\w./-]+\\.\\w+`, 'g')
+  return [...new Set(body.match(pattern) ?? [])]
+}
+
+/** 이미지와 첨부 파일을 모두 포함해 본문에서 이 블로그에 올린 파일 주소를 찾는다. */
+export function findUploadUrls(body: string): string[] {
+  const prefixes = [REPO.imageUrlPrefix, REPO.fileUrlPrefix].map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const pattern = new RegExp(`(?:${prefixes.join('|')})/[\\w./-]+\\.\\w+`, 'g')
   return [...new Set(body.match(pattern) ?? [])]
 }

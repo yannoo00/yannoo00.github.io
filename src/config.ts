@@ -15,4 +15,6 @@ export const REPO = {
   /** 이미지가 저장되는 리포 경로. 사이트에서는 `public`을 뺀 경로로 서빙된다. */
   publicDir: 'public',
   imageUrlPrefix: '/img/posts',
+  /** 글에 첨부한 파일이 저장되는 주소 */
+  fileUrlPrefix: '/files/posts',
 }

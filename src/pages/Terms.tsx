@@ -4,7 +4,6 @@ import { PostRows, Status } from '../components/PostList'
 import { countTerms, postsWithTerm, usePosts } from '../lib/data'
 import { categoryUrl, tagUrl } from '../lib/slug'
 import { useTitle } from '../lib/useTitle'
-import { TagPanel } from './Home'
 
 type Field = 'categories' | 'tags'
 
@@ -25,7 +24,7 @@ export function TermIndex({ field }: { field: Field }) {
   const terms = countTerms(posts.data, field)
 
   return (
-    <Page panel={field === 'categories' ? <TagPanel posts={posts.data} /> : undefined}>
+    <Page>
       <h1 className="page-title">{LABEL[field]}</h1>
       {field === 'categories' ? (
         <ul className="term-list">
@@ -65,7 +64,7 @@ export function TermPosts({ field }: { field: Field }) {
   }
 
   return (
-    <Page panel={<TagPanel posts={posts.data} />}>
+    <Page>
       <h1 className="page-title">
         {found.name} <span className="count">{found.posts.length}개</span>
       </h1>

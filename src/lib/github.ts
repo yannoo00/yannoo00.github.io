@@ -54,7 +54,8 @@ export async function verifyToken(token: string): Promise<string> {
     undefined,
     token,
   )
-  if (!repo.permissions?.push) {
+  // Fine-grained 토큰에서는 permissions 필드가 빠져 오는 경우가 있어, 명시적으로 false일 때만 거절한다
+  if (repo.permissions && !repo.permissions.push) {
     throw new GitHubError('이 토큰에는 리포지토리에 쓸 권한이 없습니다. Contents 권한을 Read and write로 설정하세요.', 403)
   }
   return repo.owner.login

@@ -3,7 +3,6 @@ import { PostRows, Status } from '../components/PostList'
 import { usePosts } from '../lib/data'
 import type { PostMeta } from '../lib/types'
 import { useTitle } from '../lib/useTitle'
-import { TagPanel } from './Home'
 
 export default function Archives() {
   useTitle('Archives')
@@ -23,7 +22,7 @@ export default function Archives() {
   }
 
   return (
-    <Page panel={<TagPanel posts={posts.data} />}>
+    <Page>
       <h1 className="page-title">Archives</h1>
       {[...years].map(([year, list]) => (
         <section key={year} className="archive-year">

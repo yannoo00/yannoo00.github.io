@@ -8,14 +8,45 @@ import { linkTooltip } from '@milkdown/crepe/feature/link-tooltip'
 import { listItem } from '@milkdown/crepe/feature/list-item'
 import { placeholder } from '@milkdown/crepe/feature/placeholder'
 import { table } from '@milkdown/crepe/feature/table'
-import { toolbar } from '@milkdown/crepe/feature/toolbar'
 import { imageBlockSchema } from '@milkdown/kit/component/image-block'
-import { commandsCtx, remarkStringifyOptionsCtx } from '@milkdown/kit/core'
-import { addBlockTypeCommand, clearTextInCurrentBlockCommand, htmlSchema } from '@milkdown/kit/preset/commonmark'
-import { $remark, $view } from '@milkdown/kit/utils'
+import { commandsCtx, editorViewCtx, remarkStringifyOptionsCtx } from '@milkdown/kit/core'
+import type { Ctx } from '@milkdown/kit/ctx'
+import { redoCommand, undoCommand } from '@milkdown/kit/plugin/history'
+import { toggleStrikethroughCommand, insertTableCommand } from '@milkdown/kit/preset/gfm'
+import {
+  addBlockTypeCommand,
+  clearTextInCurrentBlockCommand,
+  createCodeBlockCommand,
+  htmlSchema,
+  insertHrCommand,
+  linkSchema,
+  listItemSchema,
+  wrapInBlockTypeCommand,
+  toggleEmphasisCommand,
+  toggleInlineCodeCommand,
+  toggleLinkCommand,
+  toggleStrongCommand,
+  wrapInBlockquoteCommand,
+  wrapInBulletListCommand,
+  wrapInHeadingCommand,
+  wrapInOrderedListCommand,
+} from '@milkdown/kit/preset/commonmark'
+import type { EditorView } from '@milkdown/kit/prose/view'
+import { Plugin } from '@milkdown/kit/prose/state'
+import { $prose, $remark, $view } from '@milkdown/kit/utils'
 import DOMPurify from 'dompurify'
 import { defaultHandlers } from 'mdast-util-to-markdown'
-import { useEffect, useImperativeHandle, useRef, type Ref } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
+import {
+  EMPTY_FORMAT,
+  EMPTY_STYLE,
+  isEmptyStyle,
+  type EditorAction,
+  type FormatState,
+  type RichEditorHandle,
+  type TextStyle,
+} from './editorTypes'
+import { remarkTextStyle, textStyleHandler, textStyleSchema } from './textStyle'
 import '@milkdown/crepe/theme/common/prosemirror.css'
 import '@milkdown/crepe/theme/common/reset.css'
 import '@milkdown/crepe/theme/common/block-edit.css'
@@ -25,16 +56,10 @@ import '@milkdown/crepe/theme/common/image-block.css'
 import '@milkdown/crepe/theme/common/link-tooltip.css'
 import '@milkdown/crepe/theme/common/list-item.css'
 import '@milkdown/crepe/theme/common/placeholder.css'
-import '@milkdown/crepe/theme/common/toolbar.css'
 import '@milkdown/crepe/theme/common/table.css'
 import '@milkdown/crepe/theme/frame.css'
 
-export interface RichEditorHandle {
-  /** 입력 직후에도 빠진 글자 없이 지금 내용을 돌려준다. */
-  getMarkdown: () => string
-  /** 커서가 있는 곳 아래에 이미지를 넣는다. */
-  insertImage: (url: string) => void
-}
+export type { EditorAction, FormatState, RichEditorHandle } from './editorTypes'
 
 export interface RichEditorProps {
   ref?: Ref<RichEditorHandle>
@@ -150,6 +175,137 @@ const htmlImageView = (resolveImage: (src: string) => string) =>
     return { dom }
   })
 
+/** 커서 위치(또는 선택 영역 시작)의 서식을 읽는다. */
+function readFormat(view: EditorView): FormatState {
+  const { state } = view
+  const { $from, empty } = state.selection
+  const marks = empty ? (state.storedMarks ?? $from.marks()) : ($from.nodeAfter?.marks ?? $from.marks())
+  const has = (name: string) => marks.some((m) => m.type.name === name)
+  const style = marks.find((m) => m.type.name === 'text_style')?.attrs as TextStyle | undefined
+
+  let heading = 0
+  let list: FormatState['list'] = null
+  let quote = false
+  let codeBlock = false
+  for (let depth = $from.depth; depth > 0; depth--) {
+    const node = $from.node(depth)
+    if (node.type.name === 'heading') heading = Number(node.attrs.level) || 0
+    else if (node.type.name === 'code_block') codeBlock = true
+    else if (node.type.name === 'blockquote') quote = true
+    else if (!list && node.type.name === 'bullet_list') list = 'bullet'
+    else if (!list && node.type.name === 'ordered_list') list = 'ordered'
+  }
+
+  return {
+    ...EMPTY_STYLE,
+    ...style,
+    bold: has('strong'),
+    italic: has('emphasis'),
+    strike: has('strike_through'),
+    code: has('inlineCode'),
+    link: has('link'),
+    heading,
+    list,
+    quote,
+    codeBlock,
+  }
+}
+
+/** 선택 영역(또는 앞으로 칠 글자)에 글꼴·크기·색·밑줄 값을 덮어쓴다. */
+function applyTextStyle(ctx: Ctx, patch: Partial<TextStyle>) {
+  const view = ctx.get(editorViewCtx)
+  const type = textStyleSchema.type(ctx)
+  const { state } = view
+  const { from, to, empty, $from } = state.selection
+  const merge = (marks: readonly { type: unknown; attrs: Record<string, unknown> }[]): TextStyle => {
+    const current = marks.find((m) => m.type === type)
+    return { ...EMPTY_STYLE, ...(current?.attrs as Partial<TextStyle> | undefined), ...patch }
+  }
+
+  const tr = state.tr
+  if (empty) {
+    const marks = state.storedMarks ?? $from.marks()
+    const next = merge(marks)
+    const rest = marks.filter((m) => m.type !== type)
+    tr.setStoredMarks(isEmptyStyle(next) ? rest : [...rest, type.create(next)])
+  } else {
+    state.doc.nodesBetween(from, to, (node, pos) => {
+      if (!node.isText) return
+      const start = Math.max(from, pos)
+      const end = Math.min(to, pos + node.nodeSize)
+      const next = merge(node.marks)
+      tr.removeMark(start, end, type)
+      if (!isEmptyStyle(next)) tr.addMark(start, end, type.create(next))
+    })
+  }
+  view.dispatch(tr)
+}
+
+function runAction(ctx: Ctx, action: EditorAction) {
+  const commands = ctx.get(commandsCtx)
+  const view = ctx.get(editorViewCtx)
+  switch (action.type) {
+    case 'bold':
+      return commands.call(toggleStrongCommand.key)
+    case 'italic':
+      return commands.call(toggleEmphasisCommand.key)
+    case 'strike':
+      return commands.call(toggleStrikethroughCommand.key)
+    case 'code':
+      return commands.call(toggleInlineCodeCommand.key)
+    case 'quote':
+      return commands.call(wrapInBlockquoteCommand.key)
+    case 'hr':
+      return commands.call(insertHrCommand.key)
+    case 'codeBlock':
+      return commands.call(createCodeBlockCommand.key)
+    case 'table':
+      return commands.call(insertTableCommand.key, { row: 3, col: 3 })
+    case 'bulletList':
+      return commands.call(wrapInBulletListCommand.key)
+    case 'orderedList':
+      return commands.call(wrapInOrderedListCommand.key)
+    case 'taskList':
+      return commands.call(wrapInBlockTypeCommand.key, { nodeType: listItemSchema.type(ctx), attrs: { checked: false } })
+    case 'undo':
+      return commands.call(undoCommand.key)
+    case 'redo':
+      return commands.call(redoCommand.key)
+    case 'heading':
+      return commands.call(wrapInHeadingCommand.key, action.level)
+    case 'style':
+      return applyTextStyle(ctx, action.patch)
+    case 'link': {
+      const { empty } = view.state.selection
+      if (!empty) return commands.call(toggleLinkCommand.key, { href: action.href })
+      return insertLinkText(ctx, action.href, action.href)
+    }
+    case 'insertLink':
+      return insertLinkText(ctx, action.text, action.href)
+  }
+}
+
+function insertLinkText(ctx: Ctx, text: string, href: string) {
+  const view = ctx.get(editorViewCtx)
+  const { schema } = view.state
+  const link = linkSchema.type(ctx).create({ href })
+  view.dispatch(view.state.tr.replaceSelectionWith(schema.text(text, [link]), false).scrollIntoView())
+}
+
+/** 글을 드래그해 선택했을 때 '/' 메뉴처럼 띄우는 블록 변환 목록 */
+const SELECTION_MENU: { label: string; action: EditorAction }[] = [
+  { label: '본문', action: { type: 'heading', level: 0 } },
+  { label: '제목 1', action: { type: 'heading', level: 1 } },
+  { label: '제목 2', action: { type: 'heading', level: 2 } },
+  { label: '제목 3', action: { type: 'heading', level: 3 } },
+  { label: '제목 4', action: { type: 'heading', level: 4 } },
+  { label: '인용', action: { type: 'quote' } },
+  { label: '글머리 기호 목록', action: { type: 'bulletList' } },
+  { label: '번호 목록', action: { type: 'orderedList' } },
+  { label: '할 일 목록', action: { type: 'taskList' } },
+  { label: '코드', action: { type: 'codeBlock' } },
+]
+
 export default function RichEditorView({
   ref,
   initialValue,
@@ -161,13 +317,73 @@ export default function RichEditorView({
   const root = useRef<HTMLDivElement>(null)
   const read = useRef<() => string>(() => initialValue)
   const insert = useRef<(url: string) => void>(() => {})
+  const act = useRef<(action: EditorAction) => void>(() => {})
+  const format = useRef<() => FormatState>(() => EMPTY_FORMAT)
+  const listeners = useRef(new Set<() => void>())
+  const shell = useRef<HTMLDivElement>(null)
+  const viewRef = useRef<EditorView | null>(null)
+  const dragging = useRef(false)
+  const [menu, setMenu] = useState<{ left: number; top: number } | null>(null)
+  const syncMenuRef = useRef<() => void>(() => {})
+
+  /** 글자가 선택돼 있으면 선택 영역 바로 아래에 메뉴 위치를 잡는다. */
+  const syncMenu = () => {
+    const view = viewRef.current
+    const box = shell.current
+    if (!view || !box || dragging.current) return
+    const { selection } = view.state
+    const inCode = selection.$from.parent.type.name === 'code_block'
+    if (selection.empty || inCode || '$anchorCell' in selection || !view.hasFocus()) {
+      setMenu(null)
+      return
+    }
+    const end = view.coordsAtPos(selection.to)
+    const rect = box.getBoundingClientRect()
+    setMenu({ left: Math.max(0, Math.min(end.left - rect.left, rect.width - 200)), top: end.bottom - rect.top + 6 })
+  }
   // 편집기는 한 번만 만들고, 그 안에서는 항상 최신 콜백을 부른다
   const callbacks = useRef({ onChange, onUploadImage, resolveImage, onInsertDiagram })
   callbacks.current = { onChange, onUploadImage, resolveImage, onInsertDiagram }
 
+  syncMenuRef.current = syncMenu
+
+  // 드래그하는 동안에는 메뉴를 띄우지 않고, 마우스를 놓을 때 한 번 판단한다
+  useEffect(() => {
+    const box = shell.current
+    if (!box) return
+    const down = (e: MouseEvent) => {
+      if ((e.target as Element).closest('.selection-menu')) return
+      dragging.current = true
+      setMenu(null)
+    }
+    const up = () => {
+      if (!dragging.current) return
+      dragging.current = false
+      setTimeout(() => syncMenuRef.current(), 0)
+    }
+    const blur = () => setTimeout(() => !box.contains(document.activeElement) && setMenu(null), 0)
+    box.addEventListener('mousedown', down)
+    document.addEventListener('mouseup', up)
+    box.addEventListener('focusout', blur)
+    return () => {
+      box.removeEventListener('mousedown', down)
+      document.removeEventListener('mouseup', up)
+      box.removeEventListener('focusout', blur)
+    }
+  }, [])
+
   useImperativeHandle(
     ref,
-    () => ({ getMarkdown: () => read.current(), insertImage: (url) => insert.current(url) }),
+    () => ({
+      getMarkdown: () => read.current(),
+      insertImage: (url) => insert.current(url),
+      run: (action) => act.current(action),
+      getFormat: () => format.current(),
+      subscribe: (fn) => {
+        listeners.current.add(fn)
+        return () => void listeners.current.delete(fn)
+      },
+    }),
     [],
   )
 
@@ -227,7 +443,6 @@ export default function RichEditorView({
           })
         },
       })
-      .addFeature(toolbar)
       .addFeature(placeholder, { text: "글을 쓰거나 '/' 를 눌러 블록을 고르세요", mode: 'block' })
       .addFeature(table)
 
@@ -235,6 +450,24 @@ export default function RichEditorView({
       .use(remarkImageAttrs)
       .use(remarkSplitImageHtml)
       .use(htmlImageView((src) => callbacks.current.resolveImage(src)))
+      .use(remarkTextStyle)
+      .use(textStyleSchema)
+      .use(
+        $prose(
+          () =>
+            new Plugin({
+              view: (view) => {
+                viewRef.current = view
+                return {
+                  update: () => {
+                    listeners.current.forEach((fn) => fn())
+                    syncMenuRef.current()
+                  },
+                }
+              },
+            }),
+        ),
+      )
       .config((ctx) => {
       ctx.update(remarkStringifyOptionsCtx, (prev) => ({
         ...prev,
@@ -242,6 +475,7 @@ export default function RichEditorView({
         rule: '-' as const,
         handlers: {
           ...prev.handlers,
+          textStyle: textStyleHandler as never,
           // 기존 글과 같이 줄 끝 공백 두 칸으로 줄바꿈을 적는다
           break: () => '  \n',
           // 편집기는 이미지 블록의 표시 배율을 alt 자리에 적는다(예: ![1.00]).
@@ -271,6 +505,20 @@ export default function RichEditorView({
       if (!alive) return
       baseline = crepe.getMarkdown()
       read.current = current
+      act.current = (action) => {
+        crepe.editor.action((ctx) => {
+          runAction(ctx, action)
+          ctx.get(editorViewCtx).focus()
+        })
+      }
+      format.current = () => {
+        let result = EMPTY_FORMAT
+        crepe.editor.action((ctx) => {
+          result = readFormat(ctx.get(editorViewCtx))
+        })
+        return result
+      }
+      listeners.current.forEach((fn) => fn())
       insert.current = (url) =>
         crepe.editor.action((ctx) => {
           ctx.get(commandsCtx).call(addBlockTypeCommand.key, { nodeType: imageBlockSchema.type(ctx), attrs: { src: url } })
@@ -286,5 +534,29 @@ export default function RichEditorView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  return <div ref={root} className="rich-editor" />
+  return (
+    <div ref={shell} className="rich-shell">
+      <div ref={root} className="rich-editor" />
+      {menu && (
+        <ul className="selection-menu" style={{ left: menu.left, top: menu.top }} role="menu" aria-label="선택한 글 변환">
+          {SELECTION_MENU.map((item) => (
+            <li key={item.label}>
+              <button
+                type="button"
+                role="menuitem"
+                // 누르는 순간 선택이 풀리지 않도록 포커스를 옮기지 않는다
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  act.current(item.action)
+                  setMenu(null)
+                }}
+              >
+                {item.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
 }

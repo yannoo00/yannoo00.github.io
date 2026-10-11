@@ -1,16 +1,27 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Link, useBlocker, useNavigate, useSearchParams } from 'react-router-dom'
 import { Page } from '../components/Layout'
-import Markdown from '../components/Markdown'
 import { REPO } from '../config'
-import { usePosts } from '../lib/data'
+import { countTerms, usePosts } from '../lib/data'
 import { parsePost, readFields, serializePost, type FrontMatter } from '../lib/frontmatter'
 import { actionsUrl, commitFiles, readBinaryFile, readTextFile, type FileChange } from '../lib/github'
-import { canEdit, findImageUrls, isDiagram, newDiagramUrl, newImageUrl, prepareUpload, repoPathForImage } from '../lib/image'
+import {
+  canEdit,
+  findImageUrls,
+  findUploadUrls,
+  isDiagram,
+  newDiagramUrl,
+  newFileUrl,
+  newImageUrl,
+  prepareUpload,
+  repoPathForImage,
+} from '../lib/image'
 import { dateFromFilename, postUrl, slugFromFilename, slugify } from '../lib/slug'
 import { useTitle } from '../lib/useTitle'
 import DiagramEditor from './DiagramEditor'
 import ImageEditor from './ImageEditor'
+import EditorToolbar from './EditorToolbar'
+import { CategoryPicker, TagInput } from './MetaFields'
 import RichEditor, { type RichEditorHandle } from './RichEditor'
 
 const today = () => {
@@ -18,21 +29,11 @@ const today = () => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 }
 
-const splitList = (text: string) => [...new Set(text.split(',').map((s) => s.trim()).filter(Boolean))]
 const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err))
 const isPostPath = (path: string) =>
   path.startsWith(`${REPO.postsDir}/`) && path.endsWith('.md') && !path.includes('..')
 
-type Mode = 'rich' | 'markdown'
-const MODE_KEY = 'editor-mode'
-
-function storedMode(): Mode {
-  try {
-    return localStorage.getItem(MODE_KEY) === 'markdown' ? 'markdown' : 'rich'
-  } catch {
-    return 'rich'
-  }
-}
+const MAX_ATTACHMENT = 20 * 1024 * 1024
 
 interface Saved {
   path: string
@@ -48,8 +49,8 @@ export default function Editor() {
 
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(today)
-  const [categories, setCategories] = useState('')
-  const [tags, setTags] = useState('')
+  const [categories, setCategories] = useState<string[]>([])
+  const [tags, setTags] = useState<string[]>([])
   const [body, setBody] = useState('')
   const [original, setOriginal] = useState<FrontMatter>({})
 
@@ -71,11 +72,14 @@ export default function Editor() {
   const [diagram, setDiagram] = useState<{ url: string | null; source: string | null } | null>(null)
   const [busyImage, setBusyImage] = useState(false)
 
-  const [mode, setMode] = useState<Mode>(storedMode)
   /** 본문을 편집기 밖에서 바꿨을 때 올려서 편집기를 새 본문으로 다시 띄운다 */
   const [richKey, setRichKey] = useState(0)
-  const rich = useRef<RichEditorHandle>(null)
-  const textarea = useRef<HTMLTextAreaElement>(null)
+  const rich = useRef<RichEditorHandle | null>(null)
+  const [richHandle, setRichHandle] = useState<RichEditorHandle | null>(null)
+  const attachRich = useCallback((handle: RichEditorHandle | null) => {
+    rich.current = handle
+    setRichHandle(handle)
+  }, [])
   // 방금 저장하면서 스스로 바꾼 주소는 다시 불러오지 않는다
   const loadedPath = useRef<string | null>(null)
 
@@ -90,8 +94,8 @@ export default function Editor() {
     setOriginal(data)
     setTitle(fields.title)
     setDate(fields.date)
-    setCategories(fields.categories.join(', '))
-    setTags(fields.tags.join(', '))
+    setCategories(fields.categories)
+    setTags(fields.tags)
     setBody(text)
     setRichKey((key) => key + 1)
     setPending(new Map())
@@ -182,7 +186,7 @@ export default function Editor() {
   const images = useMemo(() => findImageUrls(body), [body])
 
   /** 편집기에 방금 친 내용까지 담긴 지금 본문 */
-  const currentBody = () => (mode === 'rich' ? rich.current?.getMarkdown() : undefined) ?? body
+  const currentBody = () => rich.current?.getMarkdown() ?? body
 
   /** 이미지 목록처럼 편집기 밖에서 본문을 고친다. */
   const rewriteBody = (text: string) => {
@@ -190,23 +194,10 @@ export default function Editor() {
     setRichKey((key) => key + 1)
   }
 
-  const switchMode = (next: Mode) => {
-    if (next === mode) return
-    setBody(currentBody())
-    setMode(next)
-    try {
-      localStorage.setItem(MODE_KEY, next)
-    } catch {
-      // 저장하지 못해도 이번 화면에서는 그대로 쓴다
-    }
-  }
-
-  const insertAtCursor = (text: string) => {
-    const el = textarea.current
-    if (!el) return edit(setBody)(body + text)
-    el.setRangeText(text, el.selectionStart, el.selectionEnd, 'end')
-    edit(setBody)(el.value)
-  }
+  const categoryOptions = useMemo(
+    () => (posts.status === 'ready' ? countTerms(posts.data, 'categories').map((c) => c.name) : []),
+    [posts],
+  )
 
   /** 발행할 때 함께 커밋되도록 대기 목록에 넣고, 그 전에도 화면에 보이게 한다. */
   const stage = (url: string, blob: Blob) => {
@@ -225,14 +216,36 @@ export default function Editor() {
   }
 
   const addImages = async (files: File[]) => {
+    if (!files.length) return
     setBusyImage(true)
     setMessage(null)
     try {
-      for (const file of files) insertAtCursor(`![](${await stageImage(file)})\n`)
+      for (const file of files) {
+        const url = await stageImage(file)
+        rich.current?.insertImage(url)
+      }
+      markDirty(true)
+      setSaved(null)
     } catch (err) {
       setMessage({ kind: 'error', text: errorText(err) })
     } finally {
       setBusyImage(false)
+    }
+  }
+
+  /** 파일을 올릴 대기 목록에 넣고 본문에는 내려받는 링크를 적는다. */
+  const addFiles = (files: File[]) => {
+    setMessage(null)
+    for (const file of files) {
+      if (file.size > MAX_ATTACHMENT) {
+        setMessage({ kind: 'error', text: `"${file.name}"은(는) 20MB를 넘어 첨부할 수 없습니다.` })
+        continue
+      }
+      const url = newFileUrl(file.name)
+      stage(url, file)
+      rich.current?.run({ type: 'insertLink', text: file.name, href: url })
+      markDirty(true)
+      setSaved(null)
     }
   }
 
@@ -253,36 +266,11 @@ export default function Editor() {
     }
   }
 
-  const imageFiles = (list: FileList | null | undefined) =>
-    [...(list ?? [])].filter((file) => file.type.startsWith('image/'))
-
-  const onPaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
-    const files = imageFiles(e.clipboardData.files)
-    if (!files.length) return
-    e.preventDefault()
-    void addImages(files)
-  }
-
-  const onDrop = (e: DragEvent<HTMLTextAreaElement>) => {
-    const files = imageFiles(e.dataTransfer.files)
-    if (!files.length) return
-    e.preventDefault()
-    void addImages(files)
-  }
-
   const onSaveKey = (e: KeyboardEvent<HTMLElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 's') {
       e.preventDefault()
       void save()
     }
-  }
-
-  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab' && !e.shiftKey && !e.nativeEvent.isComposing) {
-      e.preventDefault()
-      insertAtCursor('  ')
-    }
-    onSaveKey(e)
   }
 
   /** 본문에서 이미지를 빼고, 이미 올라간 파일이면 저장할 때 지우도록 표시한다. */
@@ -350,13 +338,9 @@ export default function Editor() {
       swapImage(diagram.url, url, svg)
     } else {
       stage(url, svg)
-      if (mode === 'rich' && rich.current) {
-        rich.current.insertImage(url)
-        markDirty(true)
-        setSaved(null)
-      } else {
-        insertAtCursor(`![](${url})\n`)
-      }
+      rich.current?.insertImage(url)
+      markDirty(true)
+      setSaved(null)
     }
     setDiagram(null)
   }
@@ -381,15 +365,15 @@ export default function Editor() {
       ...original,
       title: cleanTitle,
       date,
-      categories: splitList(categories),
-      tags: splitList(tags),
+      categories,
+      tags,
     }
     // 요약 입력은 없앴다. 예전 글에 남아 있는 값은 고칠 때 함께 지운다
     delete data.excerpt
     if (path) data.last_modified_at = today()
 
     const text = currentBody()
-    const used = new Set(findImageUrls(text))
+    const used = new Set(findUploadUrls(text))
     const changes: FileChange[] = [
       { path: target, content: serializePost(data, text) },
       ...[...pending].filter(([url]) => used.has(url)).map(([url, blob]) => ({ path: repoPathForImage(url), content: blob })),
@@ -427,59 +411,61 @@ export default function Editor() {
   }
 
   return (
-    <Page wide>
-      <div className="editor">
-        <div className="editor-bar">
-          <Link to="/admin/">← 목록</Link>
-          <span className="spacer" />
-          {dirty && <span className="hint">저장하지 않은 변경이 있습니다</span>}
-          <div className="mode-switch" role="group" aria-label="편집 방식">
-            <button type="button" className={mode === 'rich' ? 'active' : ''} onClick={() => switchMode('rich')}>
-              편집기
-            </button>
-            <button type="button" className={mode === 'markdown' ? 'active' : ''} onClick={() => switchMode('markdown')}>
-              마크다운
-            </button>
+    <div className="editor-layer" onKeyDown={onSaveKey}>
+      <header className="editor-top">
+        <Link to="/admin/" className="back">
+          ← 목록
+        </Link>
+        <span className="spacer" />
+        {dirty && <span className="hint">저장하지 않은 변경이 있습니다</span>}
+        <button type="button" className="primary" disabled={saving || busyImage} onClick={save}>
+          {saving ? '커밋 중…' : path ? '수정 내용 발행' : '발행'}
+        </button>
+      </header>
+
+      <EditorToolbar
+        editor={richHandle}
+        busy={busyImage}
+        onPickImages={(files) => void addImages(files)}
+        onPickFiles={addFiles}
+        onDiagram={() => setDiagram({ url: null, source: null })}
+      />
+
+      <div className="editor-scroll">
+        <div className="editor-paper">
+          {message && <p className={`notice ${message.kind}`}>{message.text}</p>}
+          {saved && (
+            <p className="notice info">
+              커밋했습니다. 1~2분 뒤 <Link to={postUrl(saved.slug)}>글 주소</Link>에 반영됩니다.{' '}
+              <a href={actionsUrl} target="_blank" rel="noopener noreferrer">
+                배포 진행 상황 보기
+              </a>
+            </p>
+          )}
+
+          <div className="editor-meta">
+            <CategoryPicker value={categories} options={categoryOptions} onChange={edit(setCategories)} />
+            <input
+              type="date"
+              className="date-input"
+              aria-label="날짜"
+              value={date}
+              onChange={(e) => edit(setDate)(e.target.value)}
+            />
           </div>
-          <button type="button" className="primary" disabled={saving || busyImage} onClick={save}>
-            {saving ? '커밋 중…' : path ? '수정 내용 발행' : '발행'}
-          </button>
-        </div>
 
-        {message && <p className={`notice ${message.kind}`}>{message.text}</p>}
-        {saved && (
-          <p className="notice info">
-            커밋했습니다. 1~2분 뒤 <Link to={postUrl(saved.slug)}>글 주소</Link>에 반영됩니다.{' '}
-            <a href={actionsUrl} target="_blank" rel="noopener noreferrer">
-              배포 진행 상황 보기
-            </a>
-          </p>
-        )}
+          <input
+            className="editor-title"
+            value={title}
+            placeholder="제목"
+            aria-label="제목"
+            onChange={(e) => edit(setTitle)(e.target.value)}
+          />
 
-        <div className="editor-fields">
-          <label className="field-title">
-            <span>제목</span>
-            <input value={title} onChange={(e) => edit(setTitle)(e.target.value)} placeholder="제목" />
-          </label>
-          <label>
-            <span>날짜</span>
-            <input type="date" value={date} onChange={(e) => edit(setDate)(e.target.value)} />
-          </label>
-          <label>
-            <span>카테고리</span>
-            <input value={categories} onChange={(e) => edit(setCategories)(e.target.value)} placeholder="Network" />
-          </label>
-          <label>
-            <span>태그 (쉼표로 구분)</span>
-            <input value={tags} onChange={(e) => edit(setTags)(e.target.value)} placeholder="TCP, 혼잡 제어" />
-          </label>
-        </div>
-
-        {mode === 'rich' && (
-          <div className="editor-rich" onKeyDown={onSaveKey}>
+          <div className="editor-rich">
             <RichEditor
               key={richKey}
-              ref={rich}
+              ref={attachRich}
               initialValue={body}
               onChange={edit(setBody)}
               onUploadImage={uploadFromEditor}
@@ -487,82 +473,37 @@ export default function Editor() {
               resolveImage={resolveLatestImage}
             />
           </div>
-        )}
 
-        {mode === 'markdown' && (
-          <div className="editor-panes">
-            <div className="editor-pane">
-              <div className="pane-head">
-                <span>마크다운</span>
-                <span className="pane-actions">
-                  <button type="button" className="file-button" onClick={() => setDiagram({ url: null, source: null })}>
-                    다이어그램
-                  </button>
-                  <label className="file-button">
-                    {busyImage ? '이미지 처리 중…' : '이미지 추가'}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      hidden
-                      onChange={(e) => {
-                        void addImages(imageFiles(e.target.files))
-                        e.target.value = ''
-                      }}
-                    />
-                  </label>
-                </span>
-              </div>
-              <textarea
-                ref={textarea}
-                value={body}
-                spellCheck={false}
-                placeholder="여기에 글을 쓰세요. 이미지는 붙여넣거나 끌어다 놓으면 됩니다."
-                onChange={(e) => edit(setBody)(e.target.value)}
-                onPaste={onPaste}
-                onDrop={onDrop}
-                onKeyDown={onKeyDown}
-              />
-            </div>
-            <div className="editor-pane">
-              <div className="pane-head">
-                <span>미리보기</span>
-              </div>
-              <div className="content preview">
-                {title && <h1>{title}</h1>}
-                <Markdown body={body} resolveImage={resolveImage} />
-              </div>
-            </div>
-          </div>
-        )}
+          <TagInput value={tags} onChange={edit(setTags)} />
 
-        {images.length > 0 && (
-          <section className="editor-images">
-            <h2 className="panel-heading">이 글의 이미지</h2>
-            <ul>
-              {images.map((url) => (
-                <li key={url}>
-                  <img src={resolveImage(url)} alt="" />
-                  <div>
-                    {pending.has(url) && <span className="hint">발행 전</span>}
-                    {canEdit(url) && (
-                      <button type="button" disabled={busyImage} onClick={() => openImage(url)}>
-                        편집
+          {images.length > 0 && (
+            <section className="editor-images">
+              <h2 className="panel-heading">이 글의 이미지</h2>
+              <ul>
+                {images.map((url) => (
+                  <li key={url}>
+                    <img src={resolveImage(url)} alt="" />
+                    <div>
+                      {pending.has(url) && <span className="hint">발행 전</span>}
+                      {canEdit(url) && (
+                        <button type="button" disabled={busyImage} onClick={() => openImage(url)}>
+                          편집
+                        </button>
+                      )}
+                      <button type="button" onClick={() => removeImage(url)}>
+                        삭제
                       </button>
-                    )}
-                    <button type="button" onClick={() => removeImage(url)}>
-                      삭제
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
       </div>
 
       {editing && <ImageEditor source={editing.blob} onSave={replaceImage} onClose={() => setEditing(null)} />}
       {diagram && <DiagramEditor source={diagram.source} onSave={saveDiagram} onClose={() => setDiagram(null)} />}
-    </Page>
+    </div>
   )
 }

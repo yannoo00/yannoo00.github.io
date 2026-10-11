@@ -8,8 +8,6 @@ import { categoryUrl } from '../lib/slug'
 function Sidebar({ onNavigate }: { onNavigate: () => void }) {
   const posts = usePosts()
   const token = useToken()
-  const { pathname } = useLocation()
-  const [open, setOpen] = useState(pathname.startsWith('/categories'))
   const categories = posts.status === 'ready' ? countTerms(posts.data, 'categories') : []
 
   return (
@@ -29,41 +27,23 @@ function Sidebar({ onNavigate }: { onNavigate: () => void }) {
             </NavLink>
           </li>
           <li>
-            <button type="button" className="nav-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
-              <span>CATEGORIES</span>
-              <span aria-hidden="true">{open ? '−' : '+'}</span>
-            </button>
-            {open && (
-              <ul className="nav-sub">
-                <li>
-                  <NavLink to="/categories/" end onClick={onNavigate}>
-                    전체 보기
+            <NavLink to="/categories/" end onClick={onNavigate} className="nav-heading">
+              CATEGORIES
+            </NavLink>
+            <ul className="nav-sub">
+              {categories.map((c) => (
+                <li key={c.name}>
+                  <NavLink to={categoryUrl(c.name)} onClick={onNavigate}>
+                    <span>{c.name}</span>
+                    <span className="count">({c.count})</span>
                   </NavLink>
                 </li>
-                {categories.map((c) => (
-                  <li key={c.name}>
-                    <NavLink to={categoryUrl(c.name)} onClick={onNavigate}>
-                      <span>{c.name}</span>
-                      <span className="count">({c.count})</span>
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            )}
+              ))}
+            </ul>
           </li>
           <li>
             <NavLink to="/tags/" onClick={onNavigate}>
               TAGS
-            </NavLink>
-          </li>
-          <li>
-            <NavLink to="/archives/" onClick={onNavigate}>
-              ARCHIVES
-            </NavLink>
-          </li>
-          <li>
-            <NavLink to="/about/" onClick={onNavigate}>
-              ABOUT
             </NavLink>
           </li>
         </ul>
@@ -136,7 +116,10 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
 
 export default function Layout() {
   const { pathname } = useLocation()
+  const token = useToken()
   const [menuOpen, setMenuOpen] = useState(false)
+  // 목록 화면에서만 바로 새 글을 시작할 수 있게 한다
+  const showNewPost = !!token && !/^\/(admin\/edit|posts|about)/.test(pathname)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -149,6 +132,11 @@ export default function Layout() {
       <div id="main-wrapper">
         <Topbar onMenu={() => setMenuOpen(true)} />
         <Outlet />
+        {showNewPost && (
+          <Link to="/admin/edit/" className="fab" aria-label="새 글 쓰기" title="새 글 쓰기">
+            +
+          </Link>
+        )}
         <footer id="footer">
           © {new Date().getFullYear()} {SITE.title}
         </footer>
