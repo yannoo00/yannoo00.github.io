@@ -24,9 +24,25 @@ import rehypeRaw from 'rehype-raw'
 import rehypeSlug from 'rehype-slug'
 import remarkGfm from 'remark-gfm'
 import { visit } from 'unist-util-visit'
+import { languageLabel } from '../lib/codeLanguages'
 
 /** 블로그에서 실제로 쓰는 언어만 넣어 내려받는 크기를 줄인다. 목록에 없는 언어는 강조 없이 표시된다. */
 const lowlight = createLowlight({ bash, c, cpp, csharp, css, diff, go, ini, java, javascript, json, python, rust, sql, typescript, xml, yaml })
+
+/** VS Code처럼 흐름 제어 키워드(if, return …)는 다른 키워드와 색을 달리한다. */
+const CONTROL_KEYWORDS = new Set(
+  'if else for foreach while do switch case default break continue return goto try catch finally throw yield await co_await co_return co_yield import export from'.split(' '),
+)
+
+function markControlKeywords(nodes: Element['children']) {
+  for (const node of nodes) {
+    if (node.type !== 'element') continue
+    const classes = Array.isArray(node.properties.className) ? node.properties.className.map(String) : []
+    const text = node.children.length === 1 && node.children[0].type === 'text' ? node.children[0].value : ''
+    if (classes.includes('hljs-keyword') && CONTROL_KEYWORDS.has(text)) node.properties.className = [...classes, 'hljs-control']
+    markControlKeywords(node.children)
+  }
+}
 
 /** 언어가 적힌 코드 블록에 강조용 요소를 입힌다. */
 function rehypeHighlight() {
@@ -37,6 +53,7 @@ function rehypeHighlight() {
       const language = classes.map(String).find((name) => name.startsWith('language-'))?.slice(9)
       if (!language || !lowlight.registered(language)) return
       node.children = lowlight.highlight(language, toText(node, { whitespace: 'pre' })).children as Element['children']
+      markControlKeywords(node.children)
       node.properties.className = [...classes, 'hljs']
     })
   }
@@ -71,7 +88,7 @@ function CodeBlock({ children, ...rest }: ComponentProps<'pre'>) {
   return (
     <div className="code-block">
       <div className="code-header">
-        <span>{language}</span>
+        <span>{languageLabel(language)}</span>
         <button type="button" onClick={copy}>
           {copied ? '복사됨' : '복사'}
         </button>

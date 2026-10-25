@@ -12,15 +12,19 @@ import { imageBlockSchema } from '@milkdown/kit/component/image-block'
 import { commandsCtx, editorViewCtx, remarkStringifyOptionsCtx } from '@milkdown/kit/core'
 import type { Ctx } from '@milkdown/kit/ctx'
 import { redoCommand, undoCommand } from '@milkdown/kit/plugin/history'
-import { toggleStrikethroughCommand, insertTableCommand } from '@milkdown/kit/preset/gfm'
+import { toggleStrikethroughCommand, insertTableCommand, createTable } from '@milkdown/kit/preset/gfm'
 import {
   addBlockTypeCommand,
   clearTextInCurrentBlockCommand,
   createCodeBlockCommand,
+  headingKeymap,
+  hrSchema,
   htmlSchema,
   insertHrCommand,
   linkSchema,
   listItemSchema,
+  paragraphSchema,
+  selectTextNearPosCommand,
   wrapInBlockTypeCommand,
   toggleEmphasisCommand,
   toggleInlineCodeCommand,
@@ -32,11 +36,17 @@ import {
   wrapInOrderedListCommand,
 } from '@milkdown/kit/preset/commonmark'
 import type { EditorView } from '@milkdown/kit/prose/view'
-import { Plugin } from '@milkdown/kit/prose/state'
-import { $prose, $remark, $view } from '@milkdown/kit/utils'
+import { NodeSelection, Plugin, Selection, TextSelection, type Command } from '@milkdown/kit/prose/state'
+import { $prose, $remark, $shortcut, $view } from '@milkdown/kit/utils'
 import DOMPurify from 'dompurify'
 import { defaultHandlers } from 'mdast-util-to-markdown'
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
+import { CODE_LANGUAGES, languageLabel } from '../lib/codeLanguages'
+import BlockMenu from './BlockMenu'
+import { vscodeLight } from './codeTheme'
+import { slashMenuConfig, type BlockKey } from './blockItems'
+import { applyTableOp, getTableInfo, type TableInfo, type TableOp } from './tableEdit'
+import TableToolbar from './TableToolbar'
 import {
   EMPTY_FORMAT,
   EMPTY_STYLE,
@@ -73,35 +83,28 @@ export interface RichEditorProps {
   onInsertDiagram: () => void
 }
 
-const diagramIcon = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-    <path d="M3 3h8v6H8v2h8V9h-3V3h8v6h-3v4H8v2h3v6H3v-6h3v-4h0V9H3V3Zm2 2v2h4V5H5Zm10 0v2h4V5h-4ZM5 17v2h4v-2H5Z" />
-  </svg>
-`
-
-const lang = (name: string, alias: string[], load: () => Promise<LanguageSupport>) =>
-  LanguageDescription.of({ name, alias, load })
 const legacy = (mode: StreamParser<unknown>) => new LanguageSupport(StreamLanguage.define(mode))
 
-/** 읽기 화면이 강조해 주는 언어에 맞춘 목록. 고를 때만 해당 언어를 내려받는다. */
-const languages = [
-  lang('C++', ['cpp', 'c', 'cc', 'h', 'hpp'], () => import('@codemirror/lang-cpp').then((m) => m.cpp())),
-  lang('C#', ['cs', 'csharp'], () => import('@codemirror/legacy-modes/mode/clike').then((m) => legacy(m.csharp))),
-  lang('Java', [], () => import('@codemirror/lang-java').then((m) => m.java())),
-  lang('JavaScript', ['js', 'jsx'], () => import('@codemirror/lang-javascript').then((m) => m.javascript({ jsx: true }))),
-  lang('TypeScript', ['ts', 'tsx'], () =>
-    import('@codemirror/lang-javascript').then((m) => m.javascript({ jsx: true, typescript: true })),
-  ),
-  lang('Python', ['py'], () => import('@codemirror/lang-python').then((m) => m.python())),
-  lang('SQL', [], () => import('@codemirror/lang-sql').then((m) => m.sql())),
-  lang('Go', ['golang'], () => import('@codemirror/lang-go').then((m) => m.go())),
-  lang('Rust', ['rs'], () => import('@codemirror/lang-rust').then((m) => m.rust())),
-  lang('JSON', [], () => import('@codemirror/lang-json').then((m) => m.json())),
-  lang('HTML', ['xml'], () => import('@codemirror/lang-html').then((m) => m.html())),
-  lang('CSS', [], () => import('@codemirror/lang-css').then((m) => m.css())),
-  lang('YAML', ['yml'], () => import('@codemirror/lang-yaml').then((m) => m.yaml())),
-  lang('Bash', ['sh', 'shell', 'zsh'], () => import('@codemirror/legacy-modes/mode/shell').then((m) => legacy(m.shell))),
-]
+/** 언어별로 고를 때만 내려받는 문법. 이름과 별칭은 읽기 화면과 같은 목록을 쓴다. */
+const loaders: Record<string, () => Promise<LanguageSupport>> = {
+  C: () => import('@codemirror/lang-cpp').then((m) => m.cpp()),
+  'C++': () => import('@codemirror/lang-cpp').then((m) => m.cpp()),
+  'C#': () => import('@codemirror/legacy-modes/mode/clike').then((m) => legacy(m.csharp)),
+  Java: () => import('@codemirror/lang-java').then((m) => m.java()),
+  JavaScript: () => import('@codemirror/lang-javascript').then((m) => m.javascript({ jsx: true })),
+  TypeScript: () => import('@codemirror/lang-javascript').then((m) => m.javascript({ jsx: true, typescript: true })),
+  Python: () => import('@codemirror/lang-python').then((m) => m.python()),
+  SQL: () => import('@codemirror/lang-sql').then((m) => m.sql()),
+  Go: () => import('@codemirror/lang-go').then((m) => m.go()),
+  Rust: () => import('@codemirror/lang-rust').then((m) => m.rust()),
+  JSON: () => import('@codemirror/lang-json').then((m) => m.json()),
+  HTML: () => import('@codemirror/lang-html').then((m) => m.html()),
+  CSS: () => import('@codemirror/lang-css').then((m) => m.css()),
+  YAML: () => import('@codemirror/lang-yaml').then((m) => m.yaml()),
+  Bash: () => import('@codemirror/legacy-modes/mode/shell').then((m) => legacy(m.shell)),
+}
+
+const languages = CODE_LANGUAGES.map(({ name, alias }) => LanguageDescription.of({ name, alias, load: loaders[name] }))
 
 interface MdNode {
   type: string
@@ -124,6 +127,14 @@ function fillImageAttrs(node: MdNode) {
 }
 
 const remarkImageAttrs = $remark('blogImageAttrs', () => () => fillImageAttrs as never)
+
+/** `cs`, `CS`처럼 적힌 코드 언어를 대표 이름(C#)으로 읽어 언어 선택 버튼과 강조가 맞게 한다. */
+function normalizeCodeLang(node: MdNode & { lang?: string | null }) {
+  if (node.type === 'code' && node.lang) node.lang = languageLabel(node.lang)
+  node.children?.forEach(normalizeCodeLang)
+}
+
+const remarkCodeLang = $remark('blogCodeLang', () => () => normalizeCodeLang as never)
 
 const IMG_THEN_TEXT = /^(<img\b[^>]*>)[ \t]*\r?\n([\s\S]*\S[\s\S]*)$/i
 
@@ -292,19 +303,65 @@ function insertLinkText(ctx: Ctx, text: string, href: string) {
   view.dispatch(view.state.tr.replaceSelectionWith(schema.text(text, [link]), false).scrollIntoView())
 }
 
-/** 글을 드래그해 선택했을 때 '/' 메뉴처럼 띄우는 블록 변환 목록 */
-const SELECTION_MENU: { label: string; action: EditorAction }[] = [
-  { label: '본문', action: { type: 'heading', level: 0 } },
-  { label: '제목 1', action: { type: 'heading', level: 1 } },
-  { label: '제목 2', action: { type: 'heading', level: 2 } },
-  { label: '제목 3', action: { type: 'heading', level: 3 } },
-  { label: '제목 4', action: { type: 'heading', level: 4 } },
-  { label: '인용', action: { type: 'quote' } },
-  { label: '글머리 기호 목록', action: { type: 'bulletList' } },
-  { label: '번호 목록', action: { type: 'orderedList' } },
-  { label: '할 일 목록', action: { type: 'taskList' } },
-  { label: '코드', action: { type: 'codeBlock' } },
-]
+/** 블록 손잡이·글 선택 메뉴에서 바로 바꿀 수 있는 항목. 글은 그대로 두고 블록 종류만 바꾼다. */
+const CONVERT: Partial<Record<BlockKey, EditorAction>> = {
+  text: { type: 'heading', level: 0 },
+  h1: { type: 'heading', level: 1 },
+  h2: { type: 'heading', level: 2 },
+  h3: { type: 'heading', level: 3 },
+  quote: { type: 'quote' },
+  bulletList: { type: 'bulletList' },
+  orderedList: { type: 'orderedList' },
+  taskList: { type: 'taskList' },
+  code: { type: 'codeBlock' },
+}
+
+/** 메뉴에서 고른 항목을 실행한다. 구분선·이미지처럼 새로 넣는 블록은 선택한 블록 바로 아래에 넣는다. */
+function runBlock(ctx: Ctx, key: BlockKey, insertDiagram: () => void) {
+  const convert = CONVERT[key]
+  if (convert) return runAction(ctx, convert)
+
+  const commands = ctx.get(commandsCtx)
+  const view = ctx.get(editorViewCtx)
+  const { $to } = view.state.selection
+  const pos = $to.depth > 0 ? $to.after(1) : $to.pos
+  const tr = view.state.tr.insert(pos, paragraphSchema.type(ctx).create())
+  view.dispatch(tr.setSelection(TextSelection.create(tr.doc, pos + 1)))
+
+  switch (key) {
+    case 'divider':
+      return commands.call(addBlockTypeCommand.key, { nodeType: hrSchema.type(ctx) })
+    case 'image':
+      return commands.call(addBlockTypeCommand.key, { nodeType: imageBlockSchema.type(ctx) })
+    case 'table':
+      commands.call(addBlockTypeCommand.key, { nodeType: createTable(ctx, 3, 3) })
+      return commands.call(selectTextNearPosCommand.key, { pos })
+    case 'diagram':
+      return insertDiagram()
+  }
+}
+
+/**
+ * 제목 맨 앞에서 Backspace를 누르면 한 단계씩 큰 제목으로 올라가지 않고 바로 본문이 된다.
+ * 글자가 하나도 없는 제목은 그 자리에서 지우고 커서를 앞 블록 끝으로 옮긴다.
+ */
+const headingBackspace = $shortcut((ctx) => {
+  const command: Command = (state, dispatch) => {
+    const { $from, empty } = state.selection
+    const node = $from.parent
+    if (!empty || node.type.name !== 'heading' || $from.parentOffset !== 0) return false
+    const start = $from.before()
+    if (node.content.size === 0 && $from.depth === 1 && $from.index(0) > 0) {
+      const tr = state.tr.delete(start, $from.after())
+      dispatch?.(tr.setSelection(Selection.near(tr.doc.resolve(start), -1)).scrollIntoView())
+      return true
+    }
+    dispatch?.(state.tr.setNodeMarkup(start, paragraphSchema.type(ctx)).scrollIntoView())
+    return true
+  }
+  // 기본 제목 단축키(우선순위 50)보다 먼저 받는다
+  return { HeadingBackspace: { key: 'Backspace', onRun: () => command, priority: 100 } }
+})
 
 export default function RichEditorView({
   ref,
@@ -318,28 +375,70 @@ export default function RichEditorView({
   const read = useRef<() => string>(() => initialValue)
   const insert = useRef<(url: string) => void>(() => {})
   const act = useRef<(action: EditorAction) => void>(() => {})
+  const pickBlock = useRef<(key: BlockKey) => void>(() => {})
+  const runTable = useRef<(op: TableOp) => void>(() => {})
   const format = useRef<() => FormatState>(() => EMPTY_FORMAT)
   const listeners = useRef(new Set<() => void>())
   const shell = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const dragging = useRef(false)
-  const [menu, setMenu] = useState<{ left: number; top: number } | null>(null)
+  const [menu, setMenu] = useState<{ left: number; top: number; above: boolean } | null>(null)
+  const [tableBar, setTableBar] = useState<{ info: TableInfo; left: number; top: number } | null>(null)
   const syncMenuRef = useRef<() => void>(() => {})
 
-  /** 글자가 선택돼 있으면 선택 영역 바로 아래에 메뉴 위치를 잡는다. */
+  /** 커서가 표 안에 있으면 표 바로 아래에 표 편집 도구를 놓는다. */
+  const syncTable = () => {
+    const view = viewRef.current
+    const box = shell.current
+    const info = view && box && view.hasFocus() ? getTableInfo(view.state) : null
+    const dom = info && (view!.nodeDOM(info.pos) as HTMLElement | null)
+    if (!info || !dom) {
+      setTableBar(null)
+      return
+    }
+    const target = dom.querySelector('table.children') ?? dom
+    const rect = target.getBoundingClientRect()
+    const base = box!.getBoundingClientRect()
+    setTableBar({ info, left: Math.max(0, rect.left - base.left), top: rect.bottom - base.top + 6 })
+  }
+
+  /**
+   * 글자를 선택했거나 블록 손잡이(::)를 눌러 블록이 선택되면 그 아래에 블록 메뉴를 띄운다.
+   * 아래 공간이 모자라면 위로 띄운다.
+   */
   const syncMenu = () => {
+    syncTable()
     const view = viewRef.current
     const box = shell.current
     if (!view || !box || dragging.current) return
     const { selection } = view.state
     const inCode = selection.$from.parent.type.name === 'code_block'
-    if (selection.empty || inCode || '$anchorCell' in selection || !view.hasFocus()) {
+    const blockNode = selection instanceof NodeSelection ? selection.node : null
+    if (
+      selection.empty ||
+      inCode ||
+      (blockNode && !blockNode.isTextblock) ||
+      getTableInfo(view.state) ||
+      !view.hasFocus()
+    ) {
       setMenu(null)
       return
     }
-    const end = view.coordsAtPos(selection.to)
     const rect = box.getBoundingClientRect()
-    setMenu({ left: Math.max(0, Math.min(end.left - rect.left, rect.width - 200)), top: end.bottom - rect.top + 6 })
+    const dom = blockNode ? (view.nodeDOM(selection.from) as HTMLElement | null) : null
+    const anchor = dom?.getBoundingClientRect() ?? {
+      left: view.coordsAtPos(selection.to).left,
+      top: view.coordsAtPos(selection.from).top,
+      bottom: view.coordsAtPos(selection.to).bottom,
+    }
+    const MENU_HEIGHT = 320
+    const MENU_WIDTH = 240
+    const above = anchor.bottom + MENU_HEIGHT > window.innerHeight && anchor.top - MENU_HEIGHT > 0
+    setMenu({
+      left: Math.max(0, Math.min(anchor.left - rect.left, rect.width - MENU_WIDTH)),
+      top: above ? anchor.top - rect.top - 6 : anchor.bottom - rect.top + 6,
+      above,
+    })
   }
   // 편집기는 한 번만 만들고, 그 안에서는 항상 최신 콜백을 부른다
   const callbacks = useRef({ onChange, onUploadImage, resolveImage, onInsertDiagram })
@@ -352,7 +451,7 @@ export default function RichEditorView({
     const box = shell.current
     if (!box) return
     const down = (e: MouseEvent) => {
-      if ((e.target as Element).closest('.selection-menu')) return
+      if ((e.target as Element).closest('.block-menu-host, .table-toolbar')) return
       dragging.current = true
       setMenu(null)
     }
@@ -390,7 +489,7 @@ export default function RichEditorView({
   useEffect(() => {
     const upload = (file: File) => callbacks.current.onUploadImage(file)
     const crepe = new CrepeBuilder({ root: root.current, defaultValue: initialValue })
-      .addFeature(codeMirror, { languages, searchPlaceholder: '언어 검색', noResultText: '결과 없음', copyText: '복사' })
+      .addFeature(codeMirror, { languages, theme: vscodeLight, searchPlaceholder: '언어 검색', noResultText: '결과 없음', copyText: '복사' })
       .addFeature(listItem)
       .addFeature(linkTooltip, { inputPlaceholder: '링크 주소' })
       .addFeature(cursor)
@@ -408,34 +507,11 @@ export default function RichEditorView({
         blockCaptionPlaceholderText: '이미지 설명',
       })
       .addFeature(blockEdit, {
-        textGroup: {
-          label: '텍스트',
-          text: { label: '본문' },
-          h1: { label: '제목 1' },
-          h2: { label: '제목 2' },
-          h3: { label: '제목 3' },
-          h4: { label: '제목 4' },
-          h5: { label: '제목 5' },
-          h6: { label: '제목 6' },
-          quote: { label: '인용' },
-          divider: { label: '구분선' },
-        },
-        listGroup: {
-          label: '목록',
-          bulletList: { label: '글머리 기호 목록' },
-          orderedList: { label: '번호 목록' },
-          taskList: { label: '할 일 목록' },
-        },
-        advancedGroup: {
-          label: '삽입',
-          image: { label: '이미지' },
-          codeBlock: { label: '코드' },
-          table: { label: '표' },
-        },
+        ...slashMenuConfig,
         buildMenu: (builder) => {
           builder.getGroup('advanced').addItem('diagram', {
-            label: '다이어그램 (draw.io)',
-            icon: diagramIcon,
+            label: slashMenuConfig.diagram.label,
+            icon: slashMenuConfig.diagram.icon,
             onRun: (ctx) => {
               ctx.get(commandsCtx).call(clearTextInCurrentBlockCommand.key)
               callbacks.current.onInsertDiagram()
@@ -448,10 +524,12 @@ export default function RichEditorView({
 
     crepe.editor
       .use(remarkImageAttrs)
+      .use(remarkCodeLang)
       .use(remarkSplitImageHtml)
       .use(htmlImageView((src) => callbacks.current.resolveImage(src)))
       .use(remarkTextStyle)
       .use(textStyleSchema)
+      .use(headingBackspace)
       .use(
         $prose(
           () =>
@@ -469,6 +547,8 @@ export default function RichEditorView({
         ),
       )
       .config((ctx) => {
+      // 제목에서 Backspace·Delete를 누를 때 한 단계씩 큰 제목으로 올리던 기본 동작을 끈다
+      ctx.update(headingKeymap.key, (prev) => ({ ...prev, DowngradeHeading: { ...prev.DowngradeHeading, shortcuts: [] } }))
       ctx.update(remarkStringifyOptionsCtx, (prev) => ({
         ...prev,
         bullet: '-' as const,
@@ -511,6 +591,20 @@ export default function RichEditorView({
           ctx.get(editorViewCtx).focus()
         })
       }
+      pickBlock.current = (key) => {
+        crepe.editor.action((ctx) => {
+          runBlock(ctx, key, () => callbacks.current.onInsertDiagram())
+          ctx.get(editorViewCtx).focus()
+        })
+      }
+      runTable.current = (op) => {
+        crepe.editor.action((ctx) => {
+          const view = ctx.get(editorViewCtx)
+          const tr = applyTableOp(view.state, op)
+          if (tr) view.dispatch(tr)
+          view.focus()
+        })
+      }
       format.current = () => {
         let result = EMPTY_FORMAT
         crepe.editor.action((ctx) => {
@@ -538,24 +632,24 @@ export default function RichEditorView({
     <div ref={shell} className="rich-shell">
       <div ref={root} className="rich-editor" />
       {menu && (
-        <ul className="selection-menu" style={{ left: menu.left, top: menu.top }} role="menu" aria-label="선택한 글 변환">
-          {SELECTION_MENU.map((item) => (
-            <li key={item.label}>
-              <button
-                type="button"
-                role="menuitem"
-                // 누르는 순간 선택이 풀리지 않도록 포커스를 옮기지 않는다
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  act.current(item.action)
-                  setMenu(null)
-                }}
-              >
-                {item.label}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <BlockMenu
+          left={menu.left}
+          top={menu.top}
+          above={menu.above}
+          onPick={(key) => {
+            setMenu(null)
+            pickBlock.current(key)
+          }}
+          onClose={() => setMenu(null)}
+        />
+      )}
+      {tableBar && (
+        <TableToolbar
+          info={tableBar.info}
+          left={tableBar.left}
+          top={tableBar.top}
+          onRun={(op) => runTable.current(op)}
+        />
       )}
     </div>
   )

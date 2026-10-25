@@ -27,7 +27,6 @@ const HEADINGS = [
   { label: '제목 1', level: 1 },
   { label: '제목 2', level: 2 },
   { label: '제목 3', level: 3 },
-  { label: '제목 4', level: 4 },
 ]
 
 const ICONS: Record<string, string> = {
@@ -172,7 +171,7 @@ export default function EditorToolbar({ editor, busy, onPickImages, onPickFiles,
       <div className="toolbar-row format-row">
         <select
           aria-label="문단 스타일"
-          value={format.heading > 4 ? 4 : format.heading}
+          value={Math.min(format.heading, 3)}
           disabled={!ready}
           onChange={(e) => run({ type: 'heading', level: Number(e.target.value) })}
         >
