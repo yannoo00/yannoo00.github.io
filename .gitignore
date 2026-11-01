@@ -4,3 +4,7 @@ dist
 *.local
 .idea
 .vscode
+
+# Jekyll leftovers
+_site
+.jekyll-cache
